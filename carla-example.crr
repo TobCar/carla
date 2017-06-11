@@ -1,0 +1,33 @@
+process my_proc
+{
+	step fetch_server_data 
+	{
+		println("FETCH DATA")
+	}
+
+	step fetch_local_data
+	passing database_data, local_data 
+	{
+		val database_data = "database_data should be passed"
+		val local_data = "local_data should be passed"
+		println("FETCH LOCAL DATA")
+	}
+
+	/* A block
+	comment */
+	step process_data 
+	after fetch_server_data, fetch_local_data
+	using database_data, local_data
+	passing my_learning
+	{
+		val my_learning = "Some other variable which is also passed."
+		println("Received this: "+database_data+". and this: "+local_data)
+	}
+
+	//Short form for after all steps in this system.
+	last
+	using my_learning
+	{
+		println("Received this other thing: "+my_learning)
+	}
+}
