@@ -6,11 +6,11 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * Handles the relationships between threads. Specifically: what thread needs to be executed after
  * what thread and what parameters need to be passed between them.
  */
-class StepRelationshipActor( 
+class OrderableRelationshipActor( 
     dependsOn: collection.immutable.Map[String, Set[String]], 
     dependents: collection.immutable.Map[String, Set[String]]) {
   
-  val runnables = collection.mutable.Map[String, StepRunnable]()
+  val runnables = collection.mutable.Map[String, OrderableRunnable]()
   val runnableOutputs = collection.mutable.Map[String, Map[String, Any]]()
   
   private val isDone = collection.mutable.Map[String, Boolean]()
@@ -36,10 +36,10 @@ class StepRelationshipActor(
   /**
    * Add a step for other steps to have a relationship with.
    */
-  def addStep( name:String, runnable: StepRunnable ) {
+  def addOrderable( name:String, runnable: OrderableRunnable ) {
     runnables.put(name,runnable)
     isDone.update(name, false)
-    println("Added step: "+name)
+    println("Added Orderable: "+name)
   }
 
   
@@ -49,7 +49,6 @@ class StepRelationshipActor(
   def addToFinishQueue( stepName: String, outputs: collection.immutable.Map[String, Any] ) {
     runnableOutputs.put(stepName, outputs)
     toFinishQueue.add(stepName)
-    //TODO PROCESS OUTPUTS AND MERGE OUTPUTS FROM MULTIPLE STEPS
   }
   
   /**
@@ -60,7 +59,7 @@ class StepRelationshipActor(
   private def finish( stepName: String ) {
     isDone.update(stepName, true)
     
-    //Attempt to activate the next Step
+    //Attempt to activate the next Orderable
     for( dependent <- dependents.getOrElse(stepName, Set()) ) {
       //Prevent duplicate inputs for the same variable
       val inputs = runnables.get(dependent).get.inputs
@@ -71,8 +70,8 @@ class StepRelationshipActor(
         }
       }
       
-      //It is possible for multiple Steps to come before a Step is activate.
-      //This is collecting the inputs from all the Steps before passing them in activate()
+      //It is possible for multiple Orderables to come before an Orderable is activated.
+      //This is collecting the inputs from all the Orderables before passing them in activate()
       for( (key, value) <- outputs ) {
         runnables.get(dependent).get.inputs.put(key, value)
       }
@@ -100,7 +99,7 @@ class StepRelationshipActor(
       
       if( canActivate ) {
         new Thread(runnables.get(toActivateName).get).start
-        println("Activating Step/Thread: " + toActivateName)
+        println("Activating Orderable: " + toActivateName)
       }
     }
   }

@@ -6,7 +6,7 @@ import scala.collection.mutable.Map
 object ScalaWriter {
   
   private val maxNumOfThreads = Runtime.getRuntime().availableProcessors() //TODO OPTIMIZE FOR CPU COUNT
-  private var startingSteps = Set[Step]() 
+  private var startingOrderables = Set[Orderable]() 
   
   /**
    * Pre: superContainer contains all other containers.
@@ -87,15 +87,15 @@ object ScalaWriter {
   private def createDependsOnLiteral(process: Container): String = {
     var dependsOnLiteral = "collection.immutable.Map("
     var dependsOnCount = 0
-    for( (stepName, step) <- process.steps ) {
+    for( (orderableName, orderable) <- process.orderables ) {
       //Keep track of how many entries have been added to the Map literal
       dependsOnCount += 1
       
       //Add contents to the Map literal
-      dependsOnLiteral += "\""+stepName+"\"->"+createRelationshipSetLiteral(step.dependsOn)
+      dependsOnLiteral += "\""+orderableName+"\"->"+createRelationshipSetLiteral(orderable.dependsOn)
       
       //Add a comma to keep adding entries if there's more left
-      if( dependsOnCount != process.steps.size ) {
+      if( dependsOnCount != process.orderables.size ) {
         dependsOnLiteral += ","
       }
     }
@@ -109,15 +109,15 @@ object ScalaWriter {
   private def createDependentsLiteral(process: Container): String = {
     var dependentsLiteral = "collection.immutable.Map("
     var dependentsCount = 0
-    for( (stepName, step) <- process.steps ) {
+    for( (orderableName, orderable) <- process.orderables ) {
       //Keep track of how many entries have been added to the Map literal
       dependentsCount += 1
       
       //Add contents to the Map literal
-      dependentsLiteral += "\""+stepName+"\"" + "->" + createRelationshipSetLiteral(step.dependents)
+      dependentsLiteral += "\""+orderableName+"\"" + "->" + createRelationshipSetLiteral(orderable.dependents)
       
       //Add a comma to keep adding entries if there's more left
-      if( dependentsCount != process.steps.size ) {
+      if( dependentsCount != process.orderables.size ) {
         dependentsLiteral += ","
       }
     }
@@ -128,11 +128,11 @@ object ScalaWriter {
    * Pre: relationships is not null
    * Returns: An immutable Set literal in the form collection.immutable.Set("Entry")
    */
-  private def createRelationshipSetLiteral(relationships: Set[Step]): String =  {
+  private def createRelationshipSetLiteral(relationships: Set[Orderable]): String =  {
     var setLiteral = "collection.immutable.Set("
     
-    for( (dependentsStep, index) <- relationships.zipWithIndex ) {
-      setLiteral += "\""+dependentsStep.name+"\""
+    for( (dependentsOrderable, index) <- relationships.zipWithIndex ) {
+      setLiteral += "\""+dependentsOrderable.name+"\""
       if( index < relationships.size-1 ) {
         setLiteral += ","
       }
@@ -142,95 +142,95 @@ object ScalaWriter {
   }
   
   /**
-   * Pre: process contains Steps
+   * Pre: process contains Orderables
    * 			bw writes to a valid file
-   * Post: Code allowing the process and its steps to run has been written in a Scala file.
-   * 			 The control flow between Steps in process has been computed.
+   * Post: Code allowing the process and its orderables to run has been written in a Scala file.
+   * 			 The control flow between Orderables in process has been computed.
    */
   private def compile( process: Container, bw: BufferedWriter ) {
-    determineControlFlow(process.steps)
+    determineControlFlow(process.orderables)
     
-    //Create the Step relationship actor to manage the flow between threads
+    //Create the Orderable relationship actor to manage the flow between threads
     val nameOfRelationshipActor = process.name+"RelationshipActor"
     val dependsOn = createDependsOnLiteral(process)
     val dependents = createDependentsLiteral(process)
-    bw.write("val "+nameOfRelationshipActor+" = new StepRelationshipActor("+dependsOn+","+dependents+")\n")
+    bw.write("val "+nameOfRelationshipActor+" = new OrderableRelationshipActor("+dependsOn+","+dependents+")\n")
     
-    if( process.steps.isEmpty == false ) {
-      for( (stepName, step) <- process.steps ) {
-        createRunnable(step, bw, nameOfRelationshipActor)
+    if( process.orderables.isEmpty == false ) {
+      for( (orderableName, orderable) <- process.orderables ) {
+        createRunnable(orderable, bw, nameOfRelationshipActor)
       }
       
       //Create Thread  
-      for( startingStep <- startingSteps ) {
-        bw.write("new Thread("+nameOfRelationshipActor+".runnables.get(\""+startingStep.name+"\").get).start\n")
+      for( startingOrderable <- startingOrderables ) {
+        bw.write("new Thread("+nameOfRelationshipActor+".runnables.get(\""+startingOrderable.name+"\").get).start\n")
       }
     } else {
-      println("The process \""+process.name+"\" has no steps")
+      println("The process \""+process.name+"\" has no orderables")
     }
   }
   
   /**
-   * Outputs the Scala code in the step to a Scala file as part of a StepRunnable.
+   * Outputs the Scala code in the orderable to a Scala file as part of a OrderableRunnable.
    */
-  def createRunnable( step: Step, bw: BufferedWriter, nameOfRelationshipActor: String ) {
+  def createRunnable( orderable: Orderable, bw: BufferedWriter, nameOfRelationshipActor: String ) {
     //Create runnable
-    val runnableName = step.name + "Runnable"
+    val runnableName = orderable.name + "Runnable"
     
-    bw.write("val "+runnableName+" = new StepRunnable(\""+step.name+"\","+nameOfRelationshipActor+") {\n")
+    bw.write("val "+runnableName+" = new OrderableRunnable(\""+orderable.name+"\","+nameOfRelationshipActor+") {\n")
     bw.write("override def customRun(): collection.immutable.Map[String, Any] = {\n")
     
     //Instantiate "using" variables so the user defined code works
-    for( usingName <- step.usingName ) {
+    for( usingName <- orderable.usingName ) {
       bw.write("val "+usingName+" = inputs.get(\""+usingName+"\").get\n")
     }
     
     //User defined code
-    while( step.hasToken() ) {
-      bw.write(step.getToken()+" ")
+    while( orderable.hasToken() ) {
+      bw.write(orderable.getToken()+" ")
     }
     
     //"passing" variables
     var passingMapContents = ""
     var variablesAdded = 0
-    for( passingName <- step.passingName ) {
+    for( passingName <- orderable.passingName ) {
       passingMapContents += "\""+passingName+"\"->"+passingName
       variablesAdded += 1
-      if( variablesAdded < step.passingName.size ) {
+      if( variablesAdded < orderable.passingName.size ) {
         passingMapContents += ","
       }
     }
     bw.write("collection.immutable.Map("+passingMapContents+")")
     
     bw.write("\n}\n}\n")
-    bw.write(nameOfRelationshipActor+".addStep(\""+step.name+"\","+runnableName+")\n")
+    bw.write(nameOfRelationshipActor+".addOrderable(\""+orderable.name+"\","+runnableName+")\n")
   }
   
   /**
-   * Pre: steps is not null
-   * Post: All Steps in steps have the connections necessary for the compiler
+   * Pre: orderables is not null
+   * Post: All objects in orderables have the connections necessary for the compiler
    * 			 to execute the threads in the right order.
    */
-  def determineControlFlow( steps: Map[String, Step] ) {
-    for( (name, step) <- steps ) {
-      if( step.isLastStep() ) {
-        //Special case, run after all other steps
-        for( (dependentOnName, dependentOn) <- steps ) {
+  def determineControlFlow( orderables: Map[String, Orderable] ) {
+    for( (name, orderable) <- orderables ) {
+      if( orderable.isInstanceOf[Step] && orderable.asInstanceOf[Step].isLastStep() ) {
+        //Special case, run after all other Orderables
+        for( (dependentOnName, dependentOn) <- orderables ) {
           if( name != dependentOnName )
-            Step.connect(dependentOn, step)
+            Orderable.connect(dependentOn, orderable)
         }
-      } else if( step.after.isEmpty ) {
-        //Run a step first by default
-        startingSteps += step
+      } else if( orderable.after.isEmpty ) {
+        //Run an Orderable first by default
+        startingOrderables += orderable
       } else {
-        //Let any steps with dependents know what steps depend on them
-        for( dependentOnName <- step.after ) {
-          val dependentOn = steps.getOrElse(dependentOnName, null)
+        //Let any orderables with dependents know what orderables depend on them
+        for( dependentOnName <- orderable.after ) {
+          val dependentOn = orderables.getOrElse(dependentOnName, null)
           if( dependentOn == null ) {
             //Could be improved by throwing an exception instead
             println("ERROR: Step \""+name+"\" is after an unknown Step \""+dependentOnName+"\"")
           } else {
-            Step.connect(dependentOn, step)
+            Orderable.connect(dependentOn, orderable)
           }
         }
       }

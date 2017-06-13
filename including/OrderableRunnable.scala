@@ -1,6 +1,6 @@
 package carla.including
 
-class StepRunnable( name: String, relationshipActor: StepRelationshipActor ) extends Runnable { 
+abstract class OrderableRunnable( name: String, relationshipActor: OrderableRelationshipActor ) extends Runnable { 
  
   val inputs = collection.mutable.Map[String, Any]()
   
@@ -8,11 +8,10 @@ class StepRunnable( name: String, relationshipActor: StepRelationshipActor ) ext
     done(customRun())
   }
   
-  
-  def customRun(): scala.collection.immutable.Map[String, Any] = {
-    //Expected to be overridden by the compiler
-    null
-  }
+  /**
+   * Returns the output of the runnable
+   */
+  def customRun(): scala.collection.immutable.Map[String, Any]
   
   private def done(outputs: collection.immutable.Map[String, Any]) {
     relationshipActor.addToFinishQueue(name, outputs)

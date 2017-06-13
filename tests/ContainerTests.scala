@@ -4,7 +4,7 @@ import org.junit.Test
 import junit.framework.TestCase
 import org.junit.Assert._
 
-import carla.{NullArgumentException, Container, Step}
+import carla.{NullArgumentException, Orderable, Container, Step}
 
 class ContainerTests extends TestCase {
   
@@ -66,15 +66,15 @@ class ContainerTests extends TestCase {
   }
   
   def testInsertStepFunctionality() {
-    var previousSize = container.steps.size
+    var previousSize = container.orderables.size
     val step = new Step("internal")
     container.insert(step)
-    assertEquals(step, container.steps.get(step.name).get)
+    assertEquals(step, container.orderables.get(step.name).get)
   }
   
   def testInsertStepExceptions() {
     try {
-      container.insert(null: Step)
+      container.insert(null: Orderable)
       fail("Should have through exception")
     } catch {
       case _: IllegalArgumentException => //Expected

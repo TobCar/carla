@@ -2,28 +2,8 @@ package carla
 
 import scala.collection.mutable.Queue
 
-//Modified by the word "after"
-class Step(override val name: String) extends Configurable(name) {
-  val after = new Queue[String]()
+class Step(name: String) extends Orderable(name) {
   val tokens = new Queue[String]()
-  
-  //Thread relationships
-  var dependents = Set[Step]() 
-  var dependsOn = Set[Step]()
-  
-  /**
-   * Pre: dependentName is not empty
-   * Post: This Step will be executed after another Step with the name dependentName.
-   */
-  def addAfter( dependentName: String ) {
-    //Assert preconditions
-    if( dependentName.isEmpty() ) {
-      println("ERROR: dependentName cannot be empty")
-    } else {
-      println("Configured 'after' for "+name+" with name: "+dependentName)
-      after.enqueue(dependentName)
-    }
-  }
   
   /**
    * Pre: token is not empty
@@ -70,14 +50,5 @@ object Step {
    */
   def createLastStep(): Step = {
     new Step(lastKeyword)
-  }
-  
-  /**
-   * Pre: first and second are not null
-   * Post: The two objects can access each other
-   */
-  def connect( first: Step, second: Step ) {
-    first.dependents += second
-    second.dependsOn += first
   }
 }

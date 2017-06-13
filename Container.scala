@@ -5,7 +5,7 @@ import scala.collection.mutable.Queue
 //Can contain other Configurable objects
 class Container(containerName: String) extends Configurable(containerName) {  
   lazy val internalContainers = new Queue[Container]()
-  lazy val steps = collection.mutable.Map[String, Step]()
+  lazy val orderables = collection.mutable.Map[String, Orderable]()
   
   /**
    * Pre: internalContainer is not null
@@ -24,16 +24,16 @@ class Container(containerName: String) extends Configurable(containerName) {
   }
   
   /**
-   * Pre: step is not null
-   * Post: steps contains step with the step's name as the key
+   * Pre: orderable is not null
+   * Post: orderables contains orderable with the orderable's name as the key
    */
-  def insert( step: Step ) {
-    if( step == null ) {
-      throw new NullArgumentException("step cannot be null")
+  def insert( orderable: Orderable ) {
+    if( orderable == null ) {
+      throw new NullArgumentException("orderable cannot be null")
     }
     
-    steps.update(step.name, step)
-    println("Inserted Step: " + step.name + " into " + name)
+    orderables.update(orderable.name, orderable)
+    println("Inserted Orderable: " + orderable.name + " into " + name)
   }
   
   /**
