@@ -2,6 +2,7 @@ package carla
 
 import java.io.{File, FileWriter, BufferedWriter}
 import scala.collection.mutable.Map
+import carla.including.OrderableRelationshipActor.createActorName
 
 object ScalaWriter {
   
@@ -33,8 +34,14 @@ object ScalaWriter {
     val fw = new FileWriter(file)
     val bw = new BufferedWriter(fw)
    
-    //Add the generic start of the file
-    bw.write("package "+libraryName+"\nobject "+programName+" {\ndef main( args: Array[String] ) {\n")
+    //Write the generic start of the file
+    bw.write("package "+libraryName+"\nobject "+programName+" {\n")
+    
+    //Make it possible to run this process directly
+    bw.write("def main( args: Array[String] ) {\nactivate(collection.immutable.Map(), collection.immutable.Map(), null)\n}\n")
+    
+    //Make it possible for other files to run this process
+    bw.write("def activate(processInputs: collection.immutable.Map[String, Any], processOutputKeys: collection.immutable.Map[String, String], parentActor: OrderableRelationshipActor) {\n")
     
     //Compile to the newly created file
     compile(process, bw)
@@ -144,6 +151,8 @@ object ScalaWriter {
   /**
    * Pre: process contains Orderables
    * 			bw writes to a valid file
+   * 			bw is writing code within a function where "processInputs" and "parentActor"
+   * 			are parameters.
    * Post: Code allowing the process and its orderables to run has been written in a Scala file.
    * 			 The control flow between Orderables in process has been computed.
    */
@@ -151,10 +160,11 @@ object ScalaWriter {
     determineControlFlow(process.orderables)
     
     //Create the Orderable relationship actor to manage the flow between threads
-    val nameOfRelationshipActor = process.name+"RelationshipActor"
+    val nameOfRelationshipActor = createActorName(process.name)
     val dependsOn = createDependsOnLiteral(process)
     val dependents = createDependentsLiteral(process)
-    bw.write("val "+nameOfRelationshipActor+" = new OrderableRelationshipActor("+dependsOn+","+dependents+")\n")
+    
+    bw.write("val "+nameOfRelationshipActor+" = new OrderableRelationshipActor(\""+process.name+"\",processInputs,"+dependsOn+","+dependents+",processOutputKeys,parentActor)\n")
     
     if( process.orderables.isEmpty == false ) {
       for( (orderableName, orderable) <- process.orderables ) {
@@ -163,7 +173,7 @@ object ScalaWriter {
       
       //Create Thread  
       for( startingOrderable <- startingOrderables ) {
-        bw.write("new Thread("+nameOfRelationshipActor+".runnables.get(\""+startingOrderable.name+"\").get).start\n")
+        bw.write(nameOfRelationshipActor+".run(\""+startingOrderable.name+"\")\n")
       }
     } else {
       println("The process \""+process.name+"\" has no orderables")
@@ -177,7 +187,13 @@ object ScalaWriter {
     //Create runnable
     val runnableName = orderable.name + "Runnable"
     
-    bw.write("val "+runnableName+" = new OrderableRunnable(\""+orderable.name+"\","+nameOfRelationshipActor+") {\n")
+    /* Pass a null actor to the constructor if this Orderable is calling another process since
+     * that process adds itself to the finish queue manually. */
+    orderable match {
+      case processToRun: ProcessToRun => bw.write("val "+runnableName+" = new OrderableRunnable(\""+orderable.name+"\",null) {\n")
+      case _ => bw.write("val "+runnableName+" = new OrderableRunnable(\""+orderable.name+"\","+nameOfRelationshipActor+") {\n")
+    }
+    
     bw.write("override def customRun(): collection.immutable.Map[String, Any] = {\n")
     
     //Instantiate "using" variables so the user defined code works
@@ -190,16 +206,20 @@ object ScalaWriter {
       bw.write(orderable.getToken()+" ")
     }
     
-    //"passing" variables
     var passingMapContents = ""
-    var variablesAdded = 0
-    for( passingName <- orderable.passingName ) {
-      passingMapContents += "\""+passingName+"\"->"+passingName
-      variablesAdded += 1
-      if( variablesAdded < orderable.passingName.size ) {
-        passingMapContents += ","
-      }
+    orderable match {
+      case processToRun: ProcessToRun => //Do nothing. Outputs are passed manually by the new process when it's done.
+      case _ => //"passing" variables
+                var variablesAdded = 0
+                for( passingName <- orderable.passingName ) {
+                  passingMapContents += "\""+passingName+"\"->"+passingName
+                  variablesAdded += 1
+                  if( variablesAdded < orderable.passingName.size ) {
+                    passingMapContents += ","
+                  }
+                }
     }
+    
     bw.write("collection.immutable.Map("+passingMapContents+")")
     
     bw.write("\n}\n}\n")
@@ -223,12 +243,11 @@ object ScalaWriter {
         //Run an Orderable first by default
         startingOrderables += orderable
       } else {
-        //Let any orderables with dependents know what orderables depend on them
+        //Let any Orderables with dependents know what Orderables depend on them
         for( dependentOnName <- orderable.after ) {
           val dependentOn = orderables.getOrElse(dependentOnName, null)
           if( dependentOn == null ) {
-            //Could be improved by throwing an exception instead
-            println("ERROR: Step \""+name+"\" is after an unknown Step \""+dependentOnName+"\"")
+            throw new IllegalControlFlowException("Orderable \""+name+"\" is after an unknown Orderable \""+dependentOnName+"\"")
           } else {
             Orderable.connect(dependentOn, orderable)
           }

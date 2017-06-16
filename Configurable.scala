@@ -1,6 +1,5 @@
 package carla
 
-//Can be modified by "using" and "returning"
 abstract class Configurable(val name: String)  {
   var usingName = Set[String]()
   var passingName = Set[String]()
@@ -19,7 +18,7 @@ abstract class Configurable(val name: String)  {
         
       case null => throw new NullArgumentException("dependentName cannot be null")
       
-      case _ =>  println("Configured using for '"+name+"' with name: '"+dependentName+"'")
+      case _ =>  println("Configured 'using' for "+name+" with name: "+dependentName)
                  usingName += dependentName
     }
   }

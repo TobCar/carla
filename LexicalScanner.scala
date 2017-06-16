@@ -7,7 +7,8 @@ class LexicalScanner {
   //Constant Declarations
   val Spacing = "[ \11\n]".r
   val ValidKeyword = "[a-zA-Z_]".r //Also applies to names
-  val ValidSpecialCharacter = ",".r
+  val ValidSpecialCharacter = "[(),]".r
+  val ValidSpecialToken = "[->]{1,2}".r
   
   //Variable Declarations
   var currentChar: Char = '\u0000'
@@ -15,13 +16,16 @@ class LexicalScanner {
   
   var tokens = new ArrayBuffer[String]()
   var currentTokenIndex = 0;
-  
+
   /**
    * Split up a file into tokens that can be read with nextToken() and hasNextToken() 
    */
   def readFile(fileName: String) {
-    val lineIterator: Iterator[Char] = Source.fromFile(fileName).iter
-    
+    readFile(Source.fromFile(fileName).iter)
+  }
+  
+  //Do not require a file to make unit testing easier
+  def readFile(lineIterator: Iterator[Char]) {
     //Make sure currentChar isn't starting as null
     getChar(lineIterator)
     
@@ -38,8 +42,9 @@ class LexicalScanner {
          case ValidKeyword(_*) => readKeyword(lineIterator)
          case ValidSpecialCharacter(_*) => saveCharacter(currentChar, lineIterator)
          case Spacing(_*) => skipSpacing(lineIterator)
+         case ValidSpecialToken(_*) => readSpecialToken(lineIterator)
          case '\57' => foundForwardSlash(lineIterator)
-         case _ => println("Could not match character: " + currentChar)
+         case _ => throw new UnsupportedOperationException("Could not match character: " + currentChar)
        }
     }
   }
@@ -52,6 +57,14 @@ class LexicalScanner {
     saveToken(keyword)
     if( keyword == "step" || keyword == "last" )
       waitingForBracket = true
+  }
+  
+  /**
+   * Post: A new token has been saved.
+   */
+  def readSpecialToken(lineIterator: Iterator[Char]) {
+    val specialToken = readToken(ValidSpecialToken.toString(), lineIterator)
+    saveToken(specialToken)
   }
   
   /**

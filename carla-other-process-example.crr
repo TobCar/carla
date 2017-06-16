@@ -1,0 +1,12 @@
+process other_proc
+using data
+passing process_output
+{
+	step output_data
+	using data
+	passing process_output
+	{
+		println(data)
+		val process_output = "WOAH THIS IS AN OUTPUT FROM ANOTHER PROCESS"
+	}
+}

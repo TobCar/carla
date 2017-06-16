@@ -29,7 +29,7 @@ class Step(name: String) extends Orderable(name) {
    */
   def getToken(): String = {
     if( hasToken() == false )
-      println("ERROR: There are no more tokens to get from step '"+name+"'")
+      throw new IllegalStateException("hasToken() == false, cannot call getToken()")
     tokens.dequeue()
   }
   

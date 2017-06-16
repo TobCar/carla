@@ -17,7 +17,7 @@ abstract class Orderable(orderableName: String) extends Configurable(orderableNa
   def addAfter( dependentName: String ) {
     //Assert preconditions
     if( dependentName.isEmpty() ) {
-      println("ERROR: dependentName cannot be empty")
+      throw new IllegalArgumentException("dependentName cannot be empty")
     } else {
       println("Configured 'after' for "+name+" with name: "+dependentName)
       after.enqueue(dependentName)
