@@ -2,15 +2,70 @@ package carla
 
 import java.io.{File, FileWriter, BufferedWriter}
 import carla.including.OrderableRelationshipActor.createActorName
+import javax.swing.JFileChooser
 
+/**
+ * Takes .crr files and generates .scala files that can be run in the JVM.
+ */
 object Compiler {
   
   def main( args: Array[String] ) {
-    val scanner = new LexicalScanner()
-    scanner.readFile("/Users/TobiasC/Scala/Carla/src/carla/carla-example.crr")
-    val superContainer = Container.createSuperContainer()
-    loadContentInto(scanner, superContainer)
-    ScalaWriter.createScalaFilesFrom(superContainer)
+    val selectedInputDirectory = userSelectDirectory("Select directory to compile from")
+    val selectedOutputDirectory = userSelectDirectory("Select directory where Scala files will be written")
+    
+    compileAllFilesAt(selectedInputDirectory, selectedOutputDirectory)
+  }
+  
+  /**
+   * Pre: inputDirectory and outputDirectory are a valid directories
+   * Post: All .crr files have been compiled in that directory
+   * 			 or any subdirectories it may have
+   * 
+   * Throws: DirectoryExpectedException if directory is not a valid directory
+   */
+  def compileAllFilesAt( inputDirectory: File, outputDirectory: File ) {
+    if( inputDirectory.isDirectory() == false )
+      throw new DirectoryExpectedException("Input path '"+inputDirectory.getAbsolutePath+"' does not point to a directory")
+    if( outputDirectory.isDirectory() == false )
+      throw new DirectoryExpectedException("Output path '"+outputDirectory.getAbsolutePath+"' does not point to a directory")
+    
+    for( file <- inputDirectory.listFiles() ) {
+      if( file.isDirectory() ) {
+        compileAllFilesAt(file, outputDirectory)
+      } else {
+        //Assumes the file only has one file extension
+        val periodIndex = file.getName.indexOf(".")
+        if(periodIndex != -1 ) {
+          val fileExtension = file.getName.substring(periodIndex)
+          if( fileExtension == ".crr" )
+            compileFile(file, outputDirectory)
+        }
+      }
+    }
+  }
+  
+  /**
+   * Pre: file is a real file with the .crr extension
+   * 			outputDirectory is a valid directory where files can be written.
+   * Post: A Scala file has been created using the content of the .crr file.
+   */
+  def compileFile( file: File, outputDirectory: File ) {
+    if( !outputDirectory.isDirectory() )
+      throw new DirectoryExpectedException("Output path '"+outputDirectory.getAbsolutePath+"' does not point to a directory")
+    
+    val periodIndex = file.getName.indexOf(".")
+    if(periodIndex != -1 ) {
+      val fileExtension = file.getName.substring(periodIndex)
+      if( fileExtension != ".crr" ) {
+        throw new IllegalFileExtensionException("Expected '.crr' file, received '"+fileExtension+"'")
+      }
+      
+      val scanner = new LexicalScanner()
+      scanner.readFile(scala.io.Source.fromFile(file).iter)
+      val superContainer = Container.createSuperContainer()
+      loadContentInto(scanner, superContainer)
+      ScalaWriter.createScalaFilesFrom(superContainer, outputDirectory)
+    }
   }
   
   /**
@@ -139,7 +194,7 @@ object Compiler {
    * 			configureFunc should modify a Container or an Orderable by passing single tokens.
    * Post: Each token separated by a comma has been passed to configureFunc
    */
-  def configure(scanner: LexicalScanner, configureFunc: (String) => Unit ) {
+  private def configure(scanner: LexicalScanner, configureFunc: (String) => Unit ) {
     var tokensToProcess = 1
 
     while( scanner.hasNextToken() ) {
@@ -170,7 +225,7 @@ object Compiler {
    * Throws: UnexpectedTokenException if the next 5 tokens did not follow the expected pattern
    * 				 of "(" "any string" "->" "any string" ")"
    */
-  def configureWithPair(scanner: LexicalScanner, configureFunc: (String) => Unit ) {
+  private def configureWithPair(scanner: LexicalScanner, configureFunc: (String) => Unit ) {
     var tokensToProcess = 5
     var pairToPass = ""
     
@@ -207,6 +262,26 @@ object Compiler {
           case _ => pairToPass += currentToken
         }
       }
+    }
+  }
+  
+  /**
+   * Let the user pick a directory.
+   * 
+   * Returns: A File object with a path to a directory.
+   */
+  def userSelectDirectory(title: String): File = {
+    val chooser = new javax.swing.JFileChooser(System.getProperty("user.home")+"/Desktop")
+    chooser.setDialogTitle(title)
+    chooser.setApproveButtonText("Select Directory")
+    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+    chooser.setAcceptAllFileFilterUsed(false);
+    if( chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
+      chooser.getSelectedFile
+    } else {
+      println("Stopped compiling. User did not specify where Carla files were located.")
+      System.exit(1)
+      null
     }
   }
 }

@@ -12,12 +12,13 @@ object ScalaWriter {
   /**
    * Pre: superContainer contains all other containers.
    * 			superContainer has at least one internal container.
+   * 			writingDestination is a valid directory
    * Post: A Scala file has been created for every process in superContainer
    */
-  def createScalaFilesFrom( superContainer: Container ) {
+  def createScalaFilesFrom( superContainer: Container, writingDestination: File ) {
     while( superContainer.hasInternalContainer() ) {
        //TODO UPDATE LIBRARY NAME
-      createScalaFile(superContainer.getInternalContainer(), "LIBRARYNAMEGOESHERE")
+      createScalaFile(superContainer.getInternalContainer(), "LIBRARYNAMEGOESHERE", writingDestination)
     }
   }
   
@@ -26,11 +27,11 @@ object ScalaWriter {
    * Post: A file has been created and its name is the name
    * 			 of the container.
    */
-  def createScalaFile( process: Container, libraryName: String ) {
+  def createScalaFile( process: Container, libraryName: String, writingDestination: File ) {
     val programName = process.name
     
     //Create a file based on the container's name
-    val file = new File(programName+".scala")
+    val file = new File(writingDestination.getAbsolutePath+"/"+programName+".scala")
     val fw = new FileWriter(file)
     val bw = new BufferedWriter(fw)
    
@@ -44,7 +45,7 @@ object ScalaWriter {
     bw.write("def activate(processInputs: collection.immutable.Map[String, Any], processOutputKeys: collection.immutable.Map[String, String], parentActor: OrderableRelationshipActor) {\n")
     
     //Compile to the newly created file
-    compile(process, bw)
+    writeProcess(process, bw)
     
     //Write the closing for the object / start of the file
     bw.write("}\n}\n")
@@ -55,8 +56,7 @@ object ScalaWriter {
     
     println("File created at: "+file.getAbsolutePath)
     
-    //TODO PASS RELATIVE URLS
-    copyFilesToInclude("/Users/TobiasC/Scala/Test/src/LIBRARYNAMEGOESHERE/", "LIBRARYNAMEGOESHERE")
+    copyFilesToInclude(writingDestination.getAbsolutePath+"/", libraryName)
   }
   
   /**
@@ -65,7 +65,8 @@ object ScalaWriter {
    * Post: All files in carla.including have been copied to the compiling location
    */
   private def copyFilesToInclude( destination: String, packageName: String ) {
-    //TODO FIND INCLUDING FOLDER RELATIVE TO THE USER RUNNING THIS CODE
+    //TODO FIND INCLUDING FOLDER RELATIVE TO WHERE THE COMPILER IS STORED
+    //TODO ONLY COPY FILES ONCE NOT FOR EACH SCALA FILE
     val includingFolder = new java.io.File("/Users/TobiasC/Scala/Carla/src/carla/including")
     val listOfFiles = includingFolder.listFiles()
     for( file <- listOfFiles ) {
@@ -156,8 +157,7 @@ object ScalaWriter {
    * Post: Code allowing the process and its orderables to run has been written in a Scala file.
    * 			 The control flow between Orderables in process has been computed.
    */
-  private def compile( process: Container, bw: BufferedWriter ) {
-    determineControlFlow(process.orderables)
+  private def writeProcess( process: Container, bw: BufferedWriter ) {
     
     //Create the Orderable relationship actor to manage the flow between threads
     val nameOfRelationshipActor = createActorName(process.name)

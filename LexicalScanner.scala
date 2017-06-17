@@ -24,7 +24,9 @@ class LexicalScanner {
     readFile(Source.fromFile(fileName).iter)
   }
   
-  //Do not require a file to make unit testing easier
+  /**
+   * Split up a file into tokens that can be read with nextToken() and hasNextToken() 
+   */
   def readFile(lineIterator: Iterator[Char]) {
     //Make sure currentChar isn't starting as null
     getChar(lineIterator)
