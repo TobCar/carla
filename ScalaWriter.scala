@@ -7,7 +7,7 @@ import carla.including.OrderableRelationshipActor.createActorName
 object ScalaWriter {
   
   private val maxNumOfThreads = Runtime.getRuntime().availableProcessors() //TODO OPTIMIZE FOR CPU COUNT
-  private var startingOrderables = Set[Orderable]() 
+  private var startingOrderables = collection.mutable.Map[String,collection.mutable.Set[Orderable]]() 
   
   /**
    * Pre: superContainer contains all other containers.
@@ -158,6 +158,7 @@ object ScalaWriter {
    * 			 The control flow between Orderables in process has been computed.
    */
   private def writeProcess( process: Container, bw: BufferedWriter ) {
+    determineControlFlow(process.orderables, process.name)
     
     //Create the Orderable relationship actor to manage the flow between threads
     val nameOfRelationshipActor = createActorName(process.name)
@@ -172,7 +173,7 @@ object ScalaWriter {
       }
       
       //Create Thread  
-      for( startingOrderable <- startingOrderables ) {
+      for( startingOrderable <- startingOrderables.getOrElseUpdate(process.name, collection.mutable.Set()) ) {
         bw.write(nameOfRelationshipActor+".run(\""+startingOrderable.name+"\")\n")
       }
     } else {
@@ -228,10 +229,16 @@ object ScalaWriter {
   
   /**
    * Pre: orderables is not null
+   * 			processName is not empty and correlates to the name of a Process
    * Post: All objects in orderables have the connections necessary for the compiler
    * 			 to execute the threads in the right order.
+   * 
+   * Throws: NullArgumentException if processName is null or an empty String
    */
-  def determineControlFlow( orderables: Map[String, Orderable] ) {
+  def determineControlFlow( orderables: Map[String, Orderable], processName: String ) {
+    if( processName == null || processName.isEmpty() )
+      throw new NullArgumentException("processName cannot be empty or null")
+    
     for( (name, orderable) <- orderables ) {
       if( orderable.isInstanceOf[Step] && orderable.asInstanceOf[Step].isLastStep() ) {
         //Special case, run after all other Orderables
@@ -241,7 +248,7 @@ object ScalaWriter {
         }
       } else if( orderable.after.isEmpty ) {
         //Run an Orderable first by default
-        startingOrderables += orderable
+        startingOrderables.getOrElseUpdate(processName, collection.mutable.Set()) += orderable
       } else {
         //Let any Orderables with dependents know what Orderables depend on them
         for( dependentOnName <- orderable.after ) {
