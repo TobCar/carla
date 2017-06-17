@@ -8,6 +8,7 @@ object ScalaWriter {
   
   private val maxNumOfThreads = Runtime.getRuntime().availableProcessors() //TODO OPTIMIZE FOR CPU COUNT
   private var startingOrderables = collection.mutable.Map[String,collection.mutable.Set[Orderable]]() 
+  private var didIncludeFiles = false
   
   /**
    * Pre: superContainer contains all other containers.
@@ -65,27 +66,30 @@ object ScalaWriter {
    * Post: All files in carla.including have been copied to the compiling location
    */
   private def copyFilesToInclude( destination: String, packageName: String ) {
-    //TODO FIND INCLUDING FOLDER RELATIVE TO WHERE THE COMPILER IS STORED
-    //TODO ONLY COPY FILES ONCE NOT FOR EACH SCALA FILE
-    val includingFolder = new java.io.File("/Users/TobiasC/Scala/Carla/src/carla/including")
-    val listOfFiles = includingFolder.listFiles()
-    for( file <- listOfFiles ) {
-      val fw = new FileWriter(new File(destination+file.getName))
-      val bw = new BufferedWriter(fw)
+    if( didIncludeFiles == false ) {
+      val filesToInclude = Array("OrderableRelationshipActor", "OrderableRunnable")
       
-      for( line <- scala.io.Source.fromFile(file).getLines() ) {
-        if( line.startsWith("package") ) {
-          bw.write("package "+packageName+"\n")
-        } else {
-          bw.write(line+"\n")
+      for( fileName <- filesToInclude ) {
+        val stream = ScalaWriter.getClass.getClassLoader.getResourceAsStream("carla/including/"+fileName+".txt")
+        
+        val fw = new FileWriter(new File(destination+fileName+".scala"))
+        val bw = new BufferedWriter(fw)
+        
+        bw.write("package "+packageName+"\n")
+        for( line <- scala.io.Source.fromInputStream(stream).getLines() ) {
+          if( !line.startsWith("package") ) {
+            bw.write(line+"\n")
+          }
         }
+        
+        bw.close
+        fw.close
+        
+        println("Copied carla.include file to "+destination+fileName+".scala")
       }
       
-      bw.close
-      fw.close
-      
-      println("Copied carla.include file to "+destination+file.getName)
-    }
+      didIncludeFiles = true
+    }    
   }
   
   /**
