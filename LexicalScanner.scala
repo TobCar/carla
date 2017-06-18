@@ -57,8 +57,24 @@ class LexicalScanner {
   def readKeyword(lineIterator: Iterator[Char]) {
     val keyword = readToken(ValidKeyword.toString(), lineIterator)
     saveToken(keyword)
-    if( keyword == "step" || keyword == "last" )
+    if( keyword == "step" || keyword == "last" ) {
       waitingForBracket = true
+    } else if( keyword == "import" ) {
+      saveUntil('\n', lineIterator)
+    }
+  }
+  
+  /**
+   * Post: A token has been saved containing every character until toStop was encountered
+   * 			 or there was nothing left to read.
+   */
+  def saveUntil(toStop: Character, lineIterator: Iterator[Char]) { 
+    var currentToken = ""
+    do {
+      currentToken += currentChar
+      getChar(lineIterator)
+    } while( currentChar != toStop && currentChar != '\u0000' )
+    saveToken(currentToken)
   }
   
   /**

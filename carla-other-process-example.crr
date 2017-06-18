@@ -1,4 +1,4 @@
-process other_proc
+process OtherProc
 using data
 passing process_output
 {

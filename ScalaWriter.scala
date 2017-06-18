@@ -19,7 +19,7 @@ object ScalaWriter {
   def createScalaFilesFrom( superContainer: Container, writingDestination: File ) {
     while( superContainer.hasInternalContainer() ) {
        //TODO UPDATE LIBRARY NAME
-      createScalaFile(superContainer.getInternalContainer(), "LIBRARYNAMEGOESHERE", writingDestination)
+      createScalaFile(superContainer.getInternalContainer(), "LIBRARYNAMEGOESHERE", writingDestination, superContainer.importTokens)
     }
   }
   
@@ -28,7 +28,7 @@ object ScalaWriter {
    * Post: A file has been created and its name is the name
    * 			 of the container.
    */
-  def createScalaFile( process: Container, libraryName: String, writingDestination: File ) {
+  def createScalaFile( process: Container, libraryName: String, writingDestination: File, importTokens: collection.mutable.Set[String] ) {
     val programName = process.name
     
     //Create a file based on the container's name
@@ -36,8 +36,16 @@ object ScalaWriter {
     val fw = new FileWriter(file)
     val bw = new BufferedWriter(fw)
    
-    //Write the generic start of the file
-    bw.write("package "+libraryName+"\nobject "+programName+" {\n")
+    //Declare the file's package
+    bw.write("package "+libraryName+"\n")
+    
+    //Import any necessary packages
+    for( importToken <- importTokens ) {
+      bw.write("import "+importToken+"\n")
+    }
+    
+    //Create the static process object
+    bw.write("object "+programName+" {\n")
     
     //Make it possible to run this process directly
     bw.write("def main( args: Array[String] ) {\nactivate(collection.immutable.Map(), collection.immutable.Map(), null)\n}\n")

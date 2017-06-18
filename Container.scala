@@ -6,6 +6,7 @@ import scala.collection.mutable.Queue
 class Container(containerName: String) extends Configurable(containerName) {  
   lazy val internalContainers = new Queue[Container]()
   lazy val orderables = collection.mutable.Map[String, Orderable]()
+  lazy val importTokens = collection.mutable.Set[String]()
   
   /**
    * Pre: internalContainer is not null

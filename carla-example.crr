@@ -1,4 +1,6 @@
-process my_proc
+import scala.collection.immutable.Set
+
+process MyProc
 {
 	step fetch_server_data 
 	{
@@ -25,15 +27,18 @@ process my_proc
 	using local_data, some_output
 	passing my_learning
 	{
-		val my_learning = "Some other variable which is also passed."
 		println("Received this: "+local_data)
 		println("Process output: "+some_output)
+		
+		val my_learning = Set("Set entry #1", "Set entry #2")
 	}
 
 	//Short form for after all steps in this system.
 	last
 	using my_learning
 	{
-		println("Received this other thing: "+my_learning)
+		for( learning <- my_learning ) {
+			println("Set contained: "+learning)
+		}
 	}
 }

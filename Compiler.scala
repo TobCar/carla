@@ -3,6 +3,7 @@ package carla
 import java.io.{File, FileWriter, BufferedWriter}
 import carla.including.OrderableRelationshipActor.createActorName
 import javax.swing.JFileChooser
+import java.awt.EventQueue
 
 /**
  * Takes .crr files and generates .scala files that can be run in the JVM.
@@ -12,7 +13,6 @@ object Compiler {
   def main( args: Array[String] ) {
     val selectedInputDirectory = userSelectDirectory("Select directory to compile from")
     val selectedOutputDirectory = userSelectDirectory("Select directory where Scala files will be written")
-    
     compileAllFilesAt(selectedInputDirectory, selectedOutputDirectory)
   }
   
@@ -80,6 +80,8 @@ object Compiler {
     while( scanner.hasNextToken() ) {
       val currentToken = scanner.nextToken()
       currentToken match {
+        case "import" => container.importTokens += scanner.nextToken()
+        
         case "process" => val internalContainer = new Container(scanner.nextToken())
                           processContainer(scanner, internalContainer)
                           container.insert(internalContainer)
