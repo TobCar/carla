@@ -266,22 +266,28 @@ object Compiler {
   }
   
   /**
-   * Let the user pick a directory.
+   * Let the user pick a directory or exit the program if the user does not pick one.
    * 
    * Returns: A File object with a path to a directory.
    */
   def userSelectDirectory(title: String): File = {
-    val chooser = new javax.swing.JFileChooser(System.getProperty("user.home")+"/Desktop")
-    chooser.setDialogTitle(title)
-    chooser.setApproveButtonText("Select Directory")
-    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-    chooser.setAcceptAllFileFilterUsed(false);
-    if( chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
-      chooser.getSelectedFile
-    } else {
-      println("Stopped compiling. User did not specify where Carla files were located.")
-      System.exit(1)
-      null
-    }
+    var output: File = null
+    EventQueue.invokeAndWait((new Runnable() {
+      override def run() {
+        val chooser = new javax.swing.JFileChooser(System.getProperty("user.home")+"/Desktop")
+        chooser.setDialogTitle(title)
+        chooser.setApproveButtonText("Select Directory")
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY)
+        chooser.setAcceptAllFileFilterUsed(false)
+        if( chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
+          println("User selected directory: "+chooser.getSelectedFile.getAbsolutePath)
+          output = chooser.getSelectedFile
+        } else {
+          println("Stopped compiling. User did not pick a directory.")
+          System.exit(1)
+        }
+      }
+    }))
+    output
   }
 }
