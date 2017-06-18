@@ -12,36 +12,48 @@ class ProcessToRun(name: String, parentActorName: String) extends Orderable(name
   /**
    * Pre: dependentName is not empty
    * 			dependentName has exactly one space. When the String is split using the
-   * 			space as a delimiter, the first substring (left to space) is the variable
-   * 			name the process expects, and the second substring (right to space) is the
+   * 			space as a delimiter, the first substring (start to space) is the variable
+   * 			name the process expects, and the second substring (space to end) is the
    * 			variable name the current process is passing.
    * 
-   * Throws IllegalArgumentException if dependentName is empty
+   * Throws IllegalArgumentException if dependentName or dependentType are empty
+   * 				IllegalStateException if dependentName has more than one space
    */
-  override def addUsing( dependentName: String ) {
+  override def addUsing( dependentName: String, dependentType: String ) {
+    if( dependentName == "" )
+      throw new IllegalArgumentException("dependentName cannot be empty")
+    if( dependentType == "" )
+      throw new IllegalArgumentException("dependentType cannot be empty")
+    
     val splitString = dependentName.split(" ")
     if( splitString.length != 2 ) {
       throw new IllegalStateException("addUsing requires exactly one space in dependentName. It was passed: '"+dependentName+"'")
     }
-    super.addUsing(splitString(1))
+    super.addUsing(splitString(1), dependentType)
     actualUsing.put(splitString(1), splitString(0))
   }
   
   /**
    * Pre: dependentName is not empty
    * 			dependentName has exactly one space. When the String is split using the
-   * 			space as a delimiter, the first substring (left to space) is the variable
-   * 			name the process is passing, and the second substring (right to space) is the
+   * 			space as a delimiter, the first substring (start to space) is the variable
+   * 			name the process is passing, and the second substring (space to end) is the
    * 			variable name the current process will receive.
    * 
-   * Throws IllegalArgumentException if dependentName is empty
+   * Throws IllegalArgumentException if dependentName or dependentType are empty
+   * 				IllegalStateException if dependentName has more than one space
    */
-  override def addPassing( dependentName: String ) {
+  override def addPassing( dependentName: String, dependentType: String ) {
+    if( dependentName == "" )
+      throw new IllegalArgumentException("dependentName cannot be empty")
+    if( dependentType == "" )
+      throw new IllegalArgumentException("dependentType cannot be empty")
+    
     val splitString = dependentName.split(" ")
     if( splitString.length != 2 ) {
       throw new IllegalStateException("addPassing requires exactly one space in dependentName. It was passed: '"+dependentName+"'")
     }
-    super.addPassing(splitString(1))
+    super.addPassing(splitString(1), dependentType)
     actualPassing.put(splitString(1), splitString(0))
   }
   

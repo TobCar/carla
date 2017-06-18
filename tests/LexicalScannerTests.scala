@@ -8,6 +8,17 @@ import carla.{NullArgumentException, UnexpectedTokenException, LexicalScanner}
 
 class LexicalScannerTests extends TestCase {
   
+  def testInlineImportScanning() {
+    var lexicalScanner = new LexicalScanner()
+    lexicalScanner.readFile("com.some.package.Class anotherToken".iterator)
+    assertEquals(2, lexicalScanner.tokens.size)
+    
+    lexicalScanner = new LexicalScanner()
+    lexicalScanner.readFile("collection.mutable.Map[String, String] anotherToken".iterator)
+    //Tokens should be "collection.mutable.Map" "[" "String" "," "String" "]" "anotherToken"
+    assertEquals(7, lexicalScanner.tokens.size)
+  }
+  
   def testReadUntilEndLine() {
     val lexicalScanner = new LexicalScanner()
     lexicalScanner.readFile("import com.example.package\nimport @@@@ }}} step process {{{ process import".iterator)

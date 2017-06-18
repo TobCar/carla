@@ -8,37 +8,37 @@ process MyProc
 	}
 
 	step fetch_local_data
-	passing database_data, local_data 
+	passing String database_data, String local_data 
 	{
 		val database_data = "database_data should be passed"
 		val local_data = "local_data should be passed"
 		println("FETCH LOCAL DATA")
 	}
 	
-	run other_proc
+	run OtherProc
 	after fetch_local_data
-	using (data -> database_data)
-	passing (process_output -> some_output)
+	using (String data -> database_data)
+	passing (String process_output -> some_output)
 
 	/* A block
 	comment */
 	step process_data 
-	after fetch_server_data, fetch_local_data, other_proc
-	using local_data, some_output
-	passing my_learning
+	after fetch_server_data, fetch_local_data, OtherProc
+	using String local_data, String some_output
+	passing collection.immutable.Map[String, String] my_learning
 	{
 		println("Received this: "+local_data)
 		println("Process output: "+some_output)
 		
-		val my_learning = Set("Set entry #1", "Set entry #2")
+		val my_learning = collection.immutable.Map[String, String]("map key"->"map value")
 	}
 
 	//Short form for after all steps in this system.
 	last
-	using my_learning
+	using collection.immutable.Map[String, String] my_learning
 	{
-		for( learning <- my_learning ) {
-			println("Set contained: "+learning)
+		for( key <- my_learning.keySet ) {
+			println("Map value passed to last: "+my_learning.get(key).get)
 		}
 	}
 }

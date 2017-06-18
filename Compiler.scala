@@ -119,11 +119,11 @@ object Compiler {
     while( scanner.hasNextToken() ) {
       val currentToken = scanner.nextToken()
       currentToken match {
-        case "after" => configure(scanner, step.addAfter)
+        case "after" => configureAfter(scanner, step)
         
-        case "using" => configure(scanner, step.addUsing)
+        case "using" => configureTypeSafe(scanner, step.addUsing)
         
-        case "passing" => configure(scanner, step.addPassing)
+        case "passing" => configureTypeSafe(scanner, step.addPassing)
         
         case "{" => depth += 1
           
@@ -153,7 +153,7 @@ object Compiler {
       val currentToken = scanner.lookAtNextToken()
       currentToken match {
         case "after" => scanner.nextToken()
-                        configure(scanner, processToRun.addAfter)
+                        configureAfter(scanner, processToRun)
         
         case "using" => scanner.nextToken()
                         configureWithPair(scanner, processToRun.addUsing)
@@ -182,9 +182,9 @@ object Compiler {
         case "{" => loadContentInto(scanner, container)
                     return //Content has been loaded, processing is complete
                     
-        case "using" => configure(scanner, container.addUsing)
+        case "using" => configureTypeSafe(scanner, container.addUsing)
           
-        case "passing" => configure(scanner, container.addPassing)
+        case "passing" => configureTypeSafe(scanner, container.addPassing)
           
         case _ => println("processContainerToken is not fully implemented. Skipping info: "+currentToken)
       }
@@ -192,44 +192,114 @@ object Compiler {
   }
   
   /**
-   * Pre: There is a single token between commas
-   * 			configureFunc should modify a Container or an Orderable by passing single tokens.
+   * Modify a Configurable object for the keywords "using" and "passing".
+   * 
+   * Syntax expected: [Type] [Variable Name] [Comma if there are more to process]
+   * 
+   * Pre: configureFunc should modify a Container or an Orderable by passing single tokens and types.
    * Post: Each token separated by a comma has been passed to configureFunc
    */
-  private def configure(scanner: LexicalScanner, configureFunc: (String) => Unit ) {
-    var tokensToProcess = 1
+  private def configureTypeSafe(scanner: LexicalScanner, configureFunc: (String, String) => Unit ) {
+    var partsToProcess = 2
 
+    var variableType = ""
+    
     while( scanner.hasNextToken() ) {
-      //Keep processing if there is a comma indicating there are more tokens
-      if( tokensToProcess == 0 ) {
-        if( scanner.lookAtNextToken() == "," ) {
-          tokensToProcess = 1
-          scanner.nextToken() //Skip the comma when processing in the next iteration
-        } else {
-          return
-        }
-      } else {
-        val currentToken = scanner.nextToken()
-        currentToken match {
-          case "," => tokensToProcess = 2
-          case _ => configureFunc(currentToken)
-                    tokensToProcess -= 1
-        }
+      partsToProcess match {
+        case 2 => //Type expected
+                  variableType = scanner.nextToken()
+                  //Load all content between [ and ]
+                  if( scanner.lookAtNextToken() == "[" ) {
+                    variableType += loadAllBetweenBrackets(scanner)
+                  }
+                  partsToProcess -= 1
+        
+        case 1 => //Variable name expected
+                  configureFunc(scanner.nextToken(), variableType)
+                  partsToProcess -= 1
+        
+        case 0 => //Comma expected
+                  //Keep processing if there is a comma indicating there are more tokens
+                  if( scanner.lookAtNextToken() == "," ) {
+                    partsToProcess = 2
+                    
+                    //Skip the comma when processing in the next iteration
+                    scanner.nextToken()
+                  } else {
+                    return
+                  }
       }
     }
   }
   
   /**
-   * Pre: There is a single token between commas
-   * 			configureFunc should modify a Container or an Orderable by passing single tokens.
+   * Pre: There are single tokens by commas.
+ * 				toConfigure is not null.
+   * Post: Each token separated by a comma has been passed to configureFunc
+   */
+  private def configureAfter(scanner: LexicalScanner, toConfigure: Orderable ) {
+    if( toConfigure == null )
+      throw new NullArgumentException("toConfigure cannot be null")
+    
+    var tokensToProcess = 1
+
+    while( scanner.hasNextToken() ) {
+      tokensToProcess match {
+        case 1 => //Name expected
+                  toConfigure.addAfter(scanner.nextToken())
+                  tokensToProcess -= 1
+        
+        case 0 => //Comma expected
+                  //Keep processing if there is a comma indicating there are more tokens
+                  if( scanner.lookAtNextToken() == "," ) {
+                    tokensToProcess = 1
+                    
+                    //Skip the comma when processing in the next iteration
+                    scanner.nextToken()
+                  } else {
+                    return
+                  }
+      }
+    }
+  }
+  
+  /**
+   * Pre: scanner.lookAtNextToken() == "["
+   * Returns: The brackets and everything between them.
+   * 
+   * Throws: NullArgumentException if scanner is null.
+   * 				 UnexpectedTokenException if scanner.lookAtNextToken() != "["
+   */
+  def loadAllBetweenBrackets(scanner: LexicalScanner): String = {
+    if( scanner == null )
+      throw new NullArgumentException("scanner cannot be null")
+    if( scanner.lookAtNextToken() != "[" )
+      throw new UnexpectedTokenException("Expected '[' received '"+scanner.lookAtNextToken()+"'")
+    
+    var content = scanner.nextToken()
+    var depth = 1
+    while( scanner.hasNextToken() && depth > 0 ) {
+      if( scanner.lookAtNextToken() == "[" ) {
+        depth += 1
+      } else if( scanner.lookAtNextToken() == "]" ) { 
+        depth -= 1
+      }
+      content += scanner.nextToken()
+    }
+    content
+  }
+  
+  /**
+   * Pre: configureFunc should modify a Container or an Orderable by passing single tokens.
    * Post: Tokens representing each pair separated by commas have been passed to configureFunc
    * 
-   * Throws: UnexpectedTokenException if the next 5 tokens did not follow the expected pattern
-   * 				 of "(" "any string" "->" "any string" ")"
+   * Throws: UnexpectedTokenException if the next 6 tokens did not follow the expected pattern
+   * 				 of "(" "any string" "any string" "->" "any string" ")"
    */
-  private def configureWithPair(scanner: LexicalScanner, configureFunc: (String) => Unit ) {
-    var tokensToProcess = 5
+  private def configureWithPair(scanner: LexicalScanner, configureFunc: (String, String) => Unit ) {
+    var tokensToProcess = 6
     var pairToPass = ""
+    var typeToPass = ""
     
     while( scanner.hasNextToken() ) {
       //Keep processing if there is a comma indicating there are more tokens
@@ -245,7 +315,7 @@ object Compiler {
         tokensToProcess -= 1
         val currentToken = scanner.nextToken()
         currentToken match {
-          case "(" => if( tokensToProcess != 4 ) {
+          case "(" => if( tokensToProcess != 5 ) {
                         throw new UnexpectedTokenException("Unexpected token '('")
                       }
                       
@@ -258,10 +328,14 @@ object Compiler {
           case ")" => if( tokensToProcess != 0 ) {
                         throw new UnexpectedTokenException("Unexpected token ')'")
                       } else {
-                        configureFunc(pairToPass)
+                        configureFunc(pairToPass, typeToPass)
                       }
           
-          case _ => pairToPass += currentToken
+          case _ => if( tokensToProcess == 4 ) {
+                      typeToPass = currentToken
+                    } else {
+                      pairToPass += currentToken
+                    }
         }
       }
     }

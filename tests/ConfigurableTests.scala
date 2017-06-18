@@ -18,58 +18,88 @@ class ConfigurableTests extends TestCase {
   }
   
   def testAddUsingFunctionality() {
-    var previousSize = configurable.usingName.size
+    var previousSize = configurable.using.size
     
     //Inserting    
-    configurable.addUsing("name_of_using")
-    assertTrue(configurable.usingName.size == previousSize+1)
-    assertTrue(configurable.usingName.contains("name_of_using"))
+    configurable.addUsing("name_of_using", "SomeType")
+    assertTrue(configurable.using.size == previousSize+1)
+    assertTrue(configurable.using.get("name_of_using").get == "SomeType")
     
     //Removing
-    configurable.usingName -= "name_of_using"
-    assertTrue(configurable.usingName.size == previousSize)
-    assertFalse(configurable.usingName.contains("name_of_using"))
+    configurable.using.remove("name_of_using")
+    assertTrue(configurable.using.size == previousSize)
+    assertFalse(configurable.using.contains("name_of_using"))
   }
   
   def testAddUsingExceptions() {
     try {
-      configurable.addUsing("")
+      configurable.addUsing("", "A")
+      fail("Should have thrown an exception")
     } catch {
       case _: IllegalArgumentException => //Expected
     }
     
     try {
-      configurable.addUsing(null)
+      configurable.addUsing(null, "A")
+      fail("Should have thrown an exception")
+    } catch {
+      case _: NullArgumentException => //Expected
+    }
+    
+    try {
+      configurable.addUsing("A", "")
+      fail("Should have thrown an exception")
+    } catch {
+      case _: IllegalArgumentException => //Expected
+    }
+    
+    try {
+      configurable.addUsing("A", null)
+      fail("Should have thrown an exception")
     } catch {
       case _: NullArgumentException => //Expected
     }
   }
   
   def testAddPassingFunctionality() {
-    var previousSize = configurable.passingName.size
+    var previousSize = configurable.passing.size
     
     //Inserting
-    configurable.addPassing("name_of_passing")
-    assertTrue(configurable.passingName.size == previousSize+1)
-    assertTrue(configurable.passingName.contains("name_of_passing"))
+    configurable.addPassing("name_of_passing", "SomeType")
+    assertTrue(configurable.passing.size == previousSize+1)
+    assertTrue(configurable.passing.get("name_of_passing").get == "SomeType")
     
     //Removing
-    configurable.passingName -= "name_of_passing"
-    assertTrue(configurable.passingName.size == previousSize)
-    assertFalse(configurable.passingName.contains("name_of_passing"))
+    configurable.passing.remove("name_of_passing")
+    assertTrue(configurable.passing.size == previousSize)
+    assertFalse(configurable.passing.contains("name_of_passing"))
   }
   
   def testAddPassingExceptions() {
     try {
-      configurable.addPassing("")
-      fail("Should have through exception")
+      configurable.addPassing("", "A")
+      fail("Should have thrown an exception")
     } catch {
       case _: IllegalArgumentException => //Expected
     }
     
     try {
-      configurable.addPassing(null)
-      fail("Should have through exception")
+      configurable.addPassing(null, "A")
+      fail("Should have thrown an exception")
+    } catch {
+      case _: NullArgumentException => //Expected
+    }
+    
+    try {
+      configurable.addPassing("A", "")
+      fail("Should have thrown an exception")
+    } catch {
+      case _: IllegalArgumentException => //Expected
+    }
+    
+    try {
+      configurable.addPassing("A", null)
+      fail("Should have thrown an exception")
     } catch {
       case _: NullArgumentException => //Expected
     }

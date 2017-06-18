@@ -207,11 +207,14 @@ object ScalaWriter {
       case _ => bw.write("val "+runnableName+" = new OrderableRunnable(\""+orderable.name+"\","+nameOfRelationshipActor+") {\n")
     }
     
+    //Map key: Variable names
+    //Map value: Variable values
     bw.write("override def customRun(): collection.immutable.Map[String, Any] = {\n")
     
     //Instantiate "using" variables so the user defined code works
-    for( usingName <- orderable.usingName ) {
-      bw.write("val "+usingName+" = inputs.get(\""+usingName+"\").get\n")
+    for( (usingName, usingType) <- orderable.using ) {
+      //TODO MAKE SURE TYPES MATCH AT COMPILE TIME
+      bw.write("val "+usingName+" = inputs.get(\""+usingName+"\").get.asInstanceOf["+usingType+"]\n")
     }
     
     //User defined code
@@ -224,10 +227,11 @@ object ScalaWriter {
       case processToRun: ProcessToRun => //Do nothing. Outputs are passed manually by the new process when it's done.
       case _ => //"passing" variables
                 var variablesAdded = 0
-                for( passingName <- orderable.passingName ) {
+                for( (passingName, passingType) <- orderable.passing ) {
+                  //TODO CHECK IF PASSINGTYPE NEEDS TO BE PASSING FOR TYPESAFETY
                   passingMapContents += "\""+passingName+"\"->"+passingName
                   variablesAdded += 1
-                  if( variablesAdded < orderable.passingName.size ) {
+                  if( variablesAdded < orderable.passing.size ) {
                     passingMapContents += ","
                   }
                 }
