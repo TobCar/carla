@@ -49,7 +49,7 @@ object Orderable {
     
     for( key <- first.passing.keySet ) {
       if( second.using.contains(key) && first.passing.get(key).get != second.using.get(key).get )
-        throw new TypeMismatchException("Attempting to pass Orderable '"+second.name+"' a variable of type '"+first.passing.get(key).get+"'. Expected '"+second.using.get(key).get+"'")
+        throw new TypeMismatchException("Attempting to pass Orderable '"+second.name+"' variable '"+key+"' of type '"+first.passing.get(key).get+"'. Expected '"+second.using.get(key).get+"'")
     }
      
   }
