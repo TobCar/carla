@@ -333,6 +333,9 @@ object Compiler {
           
           case _ => if( tokensToProcess == 4 ) {
                       typeToPass = currentToken
+                      if( scanner.lookAtNextToken() == "[" ) {
+                        typeToPass += loadAllBetweenBrackets(scanner)
+                      }
                     } else {
                       pairToPass += currentToken
                     }
