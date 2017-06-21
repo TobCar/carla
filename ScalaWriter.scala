@@ -18,8 +18,7 @@ object ScalaWriter {
    */
   def createScalaFilesFrom( superContainer: Container, writingDestination: File ) {
     while( superContainer.hasInternalContainer() ) {
-       //TODO UPDATE LIBRARY NAME
-      createScalaFile(superContainer.getInternalContainer(), "LIBRARYNAMEGOESHERE", writingDestination, superContainer.importTokens)
+      createScalaFile(superContainer.getInternalContainer(), writingDestination.getName, writingDestination, superContainer.importTokens)
     }
   }
   
