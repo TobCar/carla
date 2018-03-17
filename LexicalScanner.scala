@@ -6,7 +6,7 @@ import scala.io.Source
 class LexicalScanner {
   //Constant Declarations
   val Spacing = "[ \11\n]".r
-  val ValidKeyword = "[a-zA-Z_\\.]".r //Also applies to names and variable types
+  val ValidKeyword = "[a-zA-Z_0-9\\.]".r //Also applies to names and variable types
   val ValidSpecialCharacter = "[\\[\\](),]".r
   val ValidSpecialToken = "[->]{1,2}".r
   
@@ -33,7 +33,6 @@ class LexicalScanner {
     
     //Process the characters
     while( currentChar != '\u0000' ) {
-                         
        currentChar match {
          case '{' => saveCharacter('{', lineIterator)
                      if( waitingForBracket ) {
