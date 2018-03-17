@@ -114,7 +114,7 @@ object ScalaWriter {
       dependsOnLiteral += "\""+orderableName+"\"->"+createRelationshipSetLiteral(orderable.dependsOn)
       
       //Add a comma to keep adding entries if there's more left
-      if( dependsOnCount != process.orderables.size ) {
+      if( dependsOnCount < process.orderables.size ) {
         dependsOnLiteral += ","
       }
     }
@@ -136,7 +136,7 @@ object ScalaWriter {
       dependentsLiteral += "\""+orderableName+"\"" + "->" + createRelationshipSetLiteral(orderable.dependents)
       
       //Add a comma to keep adding entries if there's more left
-      if( dependentsCount != process.orderables.size ) {
+      if( dependentsCount < process.orderables.size ) {
         dependentsLiteral += ","
       }
     }
@@ -150,11 +150,13 @@ object ScalaWriter {
   private def createRelationshipSetLiteral(relationships: Set[Orderable]): String =  {
     var setLiteral = "collection.immutable.Set("
     
-    for( (dependentsOrderable, index) <- relationships.zipWithIndex ) {
+    var dependentsWritten = 0;
+    for( dependentsOrderable <- relationships ) {
       setLiteral += "\""+dependentsOrderable.name+"\""
-      if( index < relationships.size-1 ) {
+      if( dependentsWritten < relationships.size-1 ) {
         setLiteral += ","
       }
+      dependentsWritten += 1;
     }
     
     setLiteral + ")"
@@ -211,8 +213,8 @@ object ScalaWriter {
     bw.write("override def customRun(): collection.immutable.Map[String, Any] = {\n")
     
     //Instantiate "using" variables so the user defined code works
+    //Potential improvement: Check types match at compile time.
     for( (usingName, usingType) <- orderable.using ) {
-      //TODO MAKE SURE TYPES MATCH AT COMPILE TIME
       bw.write("val "+usingName+" = inputs.get(\""+usingName+"\").get.asInstanceOf["+usingType+"]\n")
     }
     
@@ -227,7 +229,6 @@ object ScalaWriter {
       case _ => //"passing" variables
                 var variablesAdded = 0
                 for( (passingName, passingType) <- orderable.passing ) {
-                  //TODO CHECK IF PASSINGTYPE NEEDS TO BE PASSING FOR TYPESAFETY
                   passingMapContents += "\""+passingName+"\"->"+passingName
                   variablesAdded += 1
                   if( variablesAdded < orderable.passing.size ) {
