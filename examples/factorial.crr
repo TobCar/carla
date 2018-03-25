@@ -1,0 +1,88 @@
+process FactorialProc
+{
+	step wait_for_input
+	passing BigInt from1, BigInt end1, BigInt from2, BigInt end2, BigInt from3, BigInt end3, BigInt from4, BigInt end4, Long t1
+	{
+    var factorial = BigInt(scala.io.StdIn.readLine());
+    var from1 = BigInt(1);
+    var end1 = BigInt(1);
+    var from2 = BigInt(1);
+    var end2 = BigInt(1);
+    var from3 = BigInt(1);
+    var end3 = BigInt(1);
+    var from4 = BigInt(1);
+    var end4 = BigInt(1);
+    if( factorial > 10 ) {
+      from1 = BigInt(2);
+      end1 = factorial/4;
+      from2 = end1+1;
+      end2 = end1*2;
+      from3 = end2+1;
+      end3 = end1*3;
+      from4 = end3+1;
+      end4 = factorial;
+    } else {
+      end1 = factorial;
+      from2 = 1;
+      end2 = 1;
+      from3 = 1;
+      end3 = 1;
+      from4 = 1;
+      end4 = 1;
+    }
+
+		val t1 = System.nanoTime();
+	}
+
+  step solve1
+  after wait_for_input
+  passing BigInt answer1
+  using BigInt from1, BigInt end1
+  {
+    var answer1 = BigInt(1);
+    for( toMultiply <- from1 to end1 ) {
+      answer1 *= toMultiply;
+    }
+  }
+
+  step solve2
+  after wait_for_input
+  passing BigInt answer2
+  using BigInt from2, BigInt end2
+  {
+    var answer2 = BigInt(1);
+    for( toMultiply <- from2 to end2 ) {
+      answer2 *= toMultiply;
+    }
+  }
+
+  step solve3
+  after wait_for_input
+  passing BigInt answer3
+  using BigInt from3, BigInt end3
+  {
+    var answer3 = BigInt(1);
+    for( toMultiply <- from3 to end3 ) {
+      answer3 *= toMultiply;
+    }
+  }
+
+  step solve4
+  after wait_for_input
+  passing BigInt answer4
+  using BigInt from4, BigInt end4
+  {
+    var answer4 = BigInt(1);
+    for( toMultiply <- from4 to end4 ) {
+      answer4 *= toMultiply;
+    }
+  }
+
+	//Short form for after all steps in this system.
+	last
+	using BigInt answer1, BigInt answer2, BigInt answer3, BigInt answer4, Long t1
+	{
+		println(answer1*answer2*answer3*answer4);
+		println("Time elapsed: "+(System.nanoTime()-t1)+"ns");
+  }
+}
