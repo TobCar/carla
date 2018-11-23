@@ -2,7 +2,7 @@
 
 Carla makes it easy to create data flow oriented programs that are run concurrently.
 It generates threads which know what threads have to be called after them and what variables need to be passed to them.
-The code run with Carla is the same as Scala code.
+The syntax for most of the code run with Carla is the same as Scala code.
 Carla simply removes classes, functions, and other OOP features to boil the code down to the control flow.
 
 ## Getting Started
