@@ -2,7 +2,7 @@ package carla
 
 import scala.collection.mutable.Queue
 
-//Can contain other Configurable objects
+// Can contain other Configurable objects
 class Container(containerName: String) extends Configurable(containerName) {  
   lazy val internalContainers = new Queue[Container]()
   lazy val orderables = collection.mutable.Map[String, Orderable]()
@@ -15,7 +15,7 @@ class Container(containerName: String) extends Configurable(containerName) {
    * 
    * Throws NoSuchElementException if hasInternalContainer() == false
    */
-  def insert( internalContainer: Container ) {
+  def insert(internalContainer: Container) {
     if( internalContainer == null ) {
       throw new NullArgumentException("internalContainer cannot be null")
     }
@@ -28,7 +28,7 @@ class Container(containerName: String) extends Configurable(containerName) {
    * Pre: orderable is not null
    * Post: orderables contains orderable with the orderable's name as the key
    */
-  def insert( orderable: Orderable ) {
+  def insert(orderable: Orderable) {
     if( orderable == null ) {
       throw new NullArgumentException("orderable cannot be null")
     }
@@ -58,16 +58,14 @@ class Container(containerName: String) extends Configurable(containerName) {
     }
   }
   
-  def hasInternalContainer(): Boolean = {
+  def hasInternalContainer(): Boolean =
     internalContainers.isEmpty == false
-  }
   
   /**
    * Returns: True if this Container was created with Container.createSuperContainer()
    */
-  def isSuperContainer: Boolean = {
+  def isSuperContainer(): Boolean =
     name == Container.superContainerKeyword
-  }
 }
 
 object Container {
@@ -76,7 +74,6 @@ object Container {
   /**
    * Returns: A newly created Container object intended to hold other Containers.
    */
-  def createSuperContainer(): Container = {
+  def createSuperContainer(): Container =
     new Container(superContainerKeyword)
-  }
 }

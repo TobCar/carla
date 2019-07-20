@@ -5,9 +5,9 @@ import scala.collection.mutable.Queue
 class ProcessToRun(name: String, parentActorName: String) extends Orderable(name) {
   var hasGivenToken = false
   
-  //The variable names used by the process that will be run
-  val actualUsing = collection.mutable.Map[String, String]() //(expected, actual)
-  val actualPassing = collection.mutable.Map[String, String]() //(expected, actual)
+  // The variable names used by the process that will be run
+  val actualUsing = collection.mutable.Map[String, String]() // (expected, actual)
+  val actualPassing = collection.mutable.Map[String, String]() // (expected, actual)
   
   /**
    * Pre: dependentName is not empty
@@ -19,7 +19,7 @@ class ProcessToRun(name: String, parentActorName: String) extends Orderable(name
    * Throws IllegalArgumentException if dependentName or dependentType are empty
    * 				IllegalStateException if dependentName has more than one space
    */
-  override def addUsing( dependentName: String, dependentType: String ) {
+  override def addUsing(dependentName: String, dependentType: String) {
     if( dependentName == "" )
       throw new IllegalArgumentException("dependentName cannot be empty")
     if( dependentType == "" )
@@ -43,7 +43,7 @@ class ProcessToRun(name: String, parentActorName: String) extends Orderable(name
    * Throws IllegalArgumentException if dependentName or dependentType are empty
    * 				IllegalStateException if dependentName has more than one space
    */
-  override def addPassing( dependentName: String, dependentType: String ) {
+  override def addPassing(dependentName: String, dependentType: String) {
     if( dependentName == "" )
       throw new IllegalArgumentException("dependentName cannot be empty")
     if( dependentType == "" )
@@ -60,16 +60,15 @@ class ProcessToRun(name: String, parentActorName: String) extends Orderable(name
   /**
    * This feature is not meant to be used in ProcessToRun
    */
-  def insert( token: String ) {
+  def insert(token: String) {
     throw new UnsupportedOperationException("insert is not implemented in ProcessToRun")
   }
   
   /**
    * Returning: Will getToken() succeed
    */
-  def hasToken(): Boolean = {
+  def hasToken(): Boolean =
     hasGivenToken == false
-  }
   
   /**
    * Returning: A single line of code to activate a process
@@ -79,7 +78,7 @@ class ProcessToRun(name: String, parentActorName: String) extends Orderable(name
       throw new IllegalStateException("hasToken() == false, cannot call getToken()")
     hasGivenToken = true
     
-    //Create Map literals
+    // Create Map literals
     var input = "collection.immutable.Map[String, Any]("
     var inputsAdded = 0
     for( (expectedName, nameBeingPassed) <- actualUsing ) {
@@ -102,7 +101,7 @@ class ProcessToRun(name: String, parentActorName: String) extends Orderable(name
     }
     outputKeys += ")"
     
-    //Only line of code is to activate the process thread
+    // Only line of code is to activate the process thread
     name+".activate("+input+","+outputKeys+","+parentActorName+")\n"    
   }
 }

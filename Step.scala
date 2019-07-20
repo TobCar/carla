@@ -8,7 +8,7 @@ class Step(name: String) extends Orderable(name) {
   /**
    * Pre: token is not empty
    */
-  def insert( token: String ) {
+  def insert(token: String) {
     if( token.isEmpty() ) {
       println("ERROR: Token cannot be empty")
     } else {
@@ -20,9 +20,8 @@ class Step(name: String) extends Orderable(name) {
   /**
    * Returning: Will getToken() succeed
    */
-  def hasToken(): Boolean = {
+  def hasToken(): Boolean =
     tokens.isEmpty == false
-  }
   
   /**
    * Returning: A token in this Container following a FIFO policy
@@ -36,9 +35,8 @@ class Step(name: String) extends Orderable(name) {
   /**
    * Returns: True if this Step will execute its code after all other Step objects.
    */
-  def isLastStep(): Boolean = {
+  def isLastStep(): Boolean =
     name == Step.lastKeyword
-  }
 }
 
 object Step {
@@ -48,7 +46,6 @@ object Step {
    * Returns: A newly created Step object that executes its code after all other
    * 					Step objects.
    */
-  def createLastStep(): Step = {
+  def createLastStep(): Step =
     new Step(lastKeyword)
-  }
 }

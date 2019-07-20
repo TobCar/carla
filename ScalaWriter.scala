@@ -16,49 +16,49 @@ object ScalaWriter {
    * 			writingDestination is a valid directory
    * Post: A Scala file has been created for every process in superContainer
    */
-  def createScalaFilesFrom( superContainer: Container, writingDestination: File ) {
+  def createScalaFilesFrom(superContainer: Container, writingDestination: File) {
     while( superContainer.hasInternalContainer() ) {
       createScalaFile(superContainer.getInternalContainer(), writingDestination.getName, writingDestination, superContainer.importTokens)
     }
   }
   
   /**
-   * Pre: process contains 
+   * Pre: process contains Orderables
    * Post: A file has been created and its name is the name
    * 			 of the container.
    */
-  def createScalaFile( process: Container, libraryName: String, writingDestination: File, importTokens: collection.mutable.Set[String] ) {
+  def createScalaFile(process: Container, libraryName: String, writingDestination: File, importTokens: collection.mutable.Set[String]) {
     val programName = process.name
     
-    //Create a file based on the container's name
+    // Create a file based on the container's name
     val file = new File(writingDestination.getAbsolutePath+"/"+programName+".scala")
     val fw = new FileWriter(file)
     val bw = new BufferedWriter(fw)
    
-    //Declare the file's package
+    // Declare the file's package
     bw.write("package "+libraryName+"\n")
     
-    //Import any necessary packages
+    // Import any necessary packages
     for( importToken <- importTokens ) {
       bw.write("import "+importToken+"\n")
     }
     
-    //Create the static process object
+    // Create the static process object
     bw.write("object "+programName+" {\n")
     
-    //Make it possible to run this process directly
+    // Make it possible to run this process directly
     bw.write("def main( args: Array[String] ) {\nactivate(collection.immutable.Map(), collection.immutable.Map(), null)\n}\n")
     
-    //Make it possible for other files to run this process
+    // Make it possible for other files to run this process
     bw.write("def activate(processInputs: collection.immutable.Map[String, Any], processOutputKeys: collection.immutable.Map[String, String], parentActor: OrderableRelationshipActor) {\n")
     
-    //Compile to the newly created file
+    // Compile to the newly created file
     writeProcess(process, bw)
     
-    //Write the closing for the object / start of the file
+    // Write the closing for the object / start of the file
     bw.write("}\n}\n")
     
-    //Close the writer objects
+    // Close the writer objects
     bw.close()
     fw.close()
     
@@ -72,7 +72,7 @@ object ScalaWriter {
    * 			character is a '/'
    * Post: All files in carla.including have been copied to the compiling location
    */
-  private def copyFilesToInclude( destination: String, packageName: String ) {
+  private def copyFilesToInclude(destination: String, packageName: String) {
     if( didIncludeFiles == false ) {
       val filesToInclude = Array("OrderableRelationshipActor", "OrderableRunnable")
       
@@ -107,13 +107,13 @@ object ScalaWriter {
     var dependsOnLiteral = "collection.immutable.Map("
     var dependsOnCount = 0
     for( (orderableName, orderable) <- process.orderables ) {
-      //Keep track of how many entries have been added to the Map literal
+      // Keep track of how many entries have been added to the Map literal
       dependsOnCount += 1
       
-      //Add contents to the Map literal
+      // Add contents to the Map literal
       dependsOnLiteral += "\""+orderableName+"\"->"+createRelationshipSetLiteral(orderable.dependsOn)
       
-      //Add a comma to keep adding entries if there's more left
+      // Add a comma to keep adding entries if there's more left
       if( dependsOnCount < process.orderables.size ) {
         dependsOnLiteral += ","
       }
@@ -129,13 +129,13 @@ object ScalaWriter {
     var dependentsLiteral = "collection.immutable.Map("
     var dependentsCount = 0
     for( (orderableName, orderable) <- process.orderables ) {
-      //Keep track of how many entries have been added to the Map literal
+      // Keep track of how many entries have been added to the Map literal
       dependentsCount += 1
       
-      //Add contents to the Map literal
+      // Add contents to the Map literal
       dependentsLiteral += "\""+orderableName+"\"" + "->" + createRelationshipSetLiteral(orderable.dependents)
       
-      //Add a comma to keep adding entries if there's more left
+      // Add a comma to keep adding entries if there's more left
       if( dependentsCount < process.orderables.size ) {
         dependentsLiteral += ","
       }
@@ -170,10 +170,10 @@ object ScalaWriter {
    * Post: Code allowing the process and its orderables to run has been written in a Scala file.
    * 			 The control flow between Orderables in process has been computed.
    */
-  private def writeProcess( process: Container, bw: BufferedWriter ) {
+  private def writeProcess(process: Container, bw: BufferedWriter) {
     determineControlFlow(process.orderables, process.name)
     
-    //Create the Orderable relationship actor to manage the flow between threads
+    // Create the Orderable relationship actor to manage the flow between threads
     val nameOfRelationshipActor = createActorName(process.name)
     val dependsOn = createDependsOnLiteral(process)
     val dependents = createDependentsLiteral(process)
@@ -185,7 +185,7 @@ object ScalaWriter {
         createRunnable(orderable, bw, nameOfRelationshipActor)
       }
       
-      //Create Thread  
+      // Create Thread  
       for( startingOrderable <- startingOrderables.getOrElseUpdate(process.name, collection.mutable.Set()) ) {
         bw.write(nameOfRelationshipActor+".run(\""+startingOrderable.name+"\")\n")
       }
@@ -197,8 +197,8 @@ object ScalaWriter {
   /**
    * Outputs the Scala code in the orderable to a Scala file as part of a OrderableRunnable.
    */
-  def createRunnable( orderable: Orderable, bw: BufferedWriter, nameOfRelationshipActor: String ) {
-    //Create runnable
+  def createRunnable(orderable: Orderable, bw: BufferedWriter, nameOfRelationshipActor: String) {
+    // Create runnable
     val runnableName = orderable.name + "Runnable"
     
     /* Pass a null actor to the constructor if this Orderable is calling another process since
@@ -208,25 +208,25 @@ object ScalaWriter {
       case _ => bw.write("val "+runnableName+" = new OrderableRunnable(\""+orderable.name+"\","+nameOfRelationshipActor+") {\n")
     }
     
-    //Map key: Variable names
-    //Map value: Variable values
+    // Map key: Variable names
+    // Map value: Variable values
     bw.write("override def customRun(): collection.immutable.Map[String, Any] = {\n")
     
-    //Instantiate "using" variables so the user defined code works
-    //Potential improvement: Check types match at compile time.
+    // Instantiate "using" variables so the user defined code works
+    // Potential improvement: Check types match at compile time.
     for( (usingName, usingType) <- orderable.using ) {
       bw.write("val "+usingName+" = inputs.get(\""+usingName+"\").get.asInstanceOf["+usingType+"]\n")
     }
     
-    //User defined code
+    // User defined code
     while( orderable.hasToken() ) {
       bw.write(orderable.getToken()+" ")
     }
     
     var passingMapContents = ""
     orderable match {
-      case processToRun: ProcessToRun => //Do nothing. Outputs are passed manually by the new process when it's done.
-      case _ => //"passing" variables
+      case processToRun: ProcessToRun => // Do nothing. Outputs are passed manually by the new process when it's done.
+      case _ => // "passing" variables
                 var variablesAdded = 0
                 for( (passingName, passingType) <- orderable.passing ) {
                   passingMapContents += "\""+passingName+"\"->"+passingName
@@ -251,22 +251,22 @@ object ScalaWriter {
    * 
    * Throws: NullArgumentException if processName is null or an empty String
    */
-  def determineControlFlow( orderables: Map[String, Orderable], processName: String ) {
+  def determineControlFlow(orderables: Map[String, Orderable], processName: String) {
     if( processName == null || processName.isEmpty() )
       throw new NullArgumentException("processName cannot be empty or null")
     
     for( (name, orderable) <- orderables ) {
       if( orderable.isInstanceOf[Step] && orderable.asInstanceOf[Step].isLastStep() ) {
-        //Special case, run after all other Orderables
+        // Special case, run after all other Orderables
         for( (dependentOnName, dependentOn) <- orderables ) {
           if( name != dependentOnName )
             Orderable.connect(dependentOn, orderable)
         }
       } else if( orderable.after.isEmpty ) {
-        //Run an Orderable first by default
+        // Run an Orderable first by default
         startingOrderables.getOrElseUpdate(processName, collection.mutable.Set()) += orderable
       } else {
-        //Let any Orderables with dependents know what Orderables depend on them
+        // Let any Orderables with dependents know what Orderables depend on them
         for( dependentOnName <- orderable.after ) {
           val dependentOn = orderables.getOrElse(dependentOnName, null)
           if( dependentOn == null ) {

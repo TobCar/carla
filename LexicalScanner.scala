@@ -4,13 +4,13 @@ import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 class LexicalScanner {
-  //Constant Declarations
+  // Constant Declarations
   val Spacing = "[ \11\n]".r
-  val ValidKeyword = "[a-zA-Z_0-9\\.]".r //Also applies to names and variable types
+  val ValidKeyword = "[a-zA-Z_0-9\\.]".r // Also applies to names and variable types
   val ValidSpecialCharacter = "[\\[\\](),]".r
   val ValidSpecialToken = "[->]{1,2}".r
   
-  //Variable Declarations
+  // Variable Declarations
   var currentChar: Char = '\u0000'
   var waitingForBracket = false
   
@@ -20,18 +20,17 @@ class LexicalScanner {
   /**
    * Split up a file into tokens that can be read with nextToken() and hasNextToken() 
    */
-  def readFile(fileName: String) {
+  def readFile(fileName: String): Unit =
     readFile(Source.fromFile(fileName).iter)
-  }
   
   /**
    * Split up a file into tokens that can be read with nextToken() and hasNextToken() 
    */
-  def readFile(lineIterator: Iterator[Char]) {
-    //Make sure currentChar isn't starting as null
+  def readFile(lineIterator: Iterator[Char]): Unit = {
+    // Make sure currentChar isn't starting as null
     getChar(lineIterator)
     
-    //Process the characters
+    // Process the characters
     while( currentChar != '\u0000' ) {
        currentChar match {
          case '{' => saveCharacter('{', lineIterator)
@@ -87,7 +86,7 @@ class LexicalScanner {
   /**
    * Post: char has been saved to the scanner's list of tokens
    */
-  def saveCharacter( char: Character, lineIterator: Iterator[Char] ) {
+  def saveCharacter(char: Character, lineIterator: Iterator[Char]) {
     saveToken(char.toString())
     getChar(lineIterator)
   }
@@ -97,7 +96,7 @@ class LexicalScanner {
    * Post: All characters are loaded until there is a '}' for every '{'
    */
   def readAllContentInBrackets(lineIterator: Iterator[Char]): String = {
-    //Read the character after the '{' and check if there is content to load.
+    // Read the character after the '{' and check if there is content to load.
     getChar(lineIterator)
     if( currentChar == '}' ) {
       ""
@@ -124,7 +123,7 @@ class LexicalScanner {
    * Pre: lineIterator is not null
    * Returning: A string that matches regexString
    */
-  def readToken( regexString: String, lineIterator: Iterator[Char] ): String = {
+  def readToken(regexString: String, lineIterator: Iterator[Char]): String = {
     var currentToken = ""
     do {
       currentToken += currentChar
@@ -137,7 +136,7 @@ class LexicalScanner {
    * Pre: currentChar == '/' and lineIterator is not null
    * Post: The contents of the comment are skipped.
    */
-  def foundForwardSlash( lineIterator: Iterator[Char] ) {
+  def foundForwardSlash(lineIterator: Iterator[Char]) {
     if( currentChar != '\57' ) {
       println("ERROR: currentChar != '/'")
     } else {
@@ -156,17 +155,15 @@ class LexicalScanner {
    * Pre: String is not empty
    * Post: token has been stored to be sent to the compiler later
    */
-  def saveToken( token: String ) {
+  def saveToken(token: String) =
     tokens += token
-  }
-  
   
   /**
    * Pre: currentChar == '*' and lineIterator is not null
    * Post: currentChar is the character after end1 and end2 appear one after
 	 *       another through getChar()
    */
-  def skipTo( end1: Char, end2: Char, lineIterator: Iterator[Char] ) {
+  def skipTo(end1: Char, end2: Char, lineIterator: Iterator[Char]) {
     getChar(lineIterator)
     var prevChar = '\u0000'
     do {
@@ -180,7 +177,7 @@ class LexicalScanner {
    * Pre: lineIterator is not null
    * Post: currentChar is the character after end appears through getChar()
    */
-  def skipTo( end: Char, lineIterator: Iterator[Char] ) {
+  def skipTo(end: Char, lineIterator: Iterator[Char]) {
     while( currentChar != end ) {
       getChar(lineIterator)
     }
@@ -214,9 +211,8 @@ class LexicalScanner {
   /**
    * Returns: True if nextToken() has more tokens to output.
    */
-  def hasNextToken(): Boolean = {
+  def hasNextToken(): Boolean =
     currentTokenIndex < tokens.size
-  }
   
   /**
    * Access the tokens sequentially in the order they were in the original file.
@@ -231,7 +227,6 @@ class LexicalScanner {
   /**
    * Returns: What nextToken() will return if called
    */
-  def lookAtNextToken(): String = {
+  def lookAtNextToken(): String =
     tokens(currentTokenIndex)
-  }
 }

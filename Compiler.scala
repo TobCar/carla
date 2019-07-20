@@ -10,7 +10,7 @@ import java.awt.EventQueue
  */
 object Compiler {
   
-  def main( args: Array[String] ) {
+  def main(args: Array[String]) {
     val selectedInputDirectory = userSelectDirectory("Select directory to compile from")
     val selectedOutputDirectory = userSelectDirectory("Select directory where Scala files will be written")
     compileAllFilesAt(selectedInputDirectory, selectedOutputDirectory)
@@ -23,7 +23,7 @@ object Compiler {
    * 
    * Throws: DirectoryExpectedException if directory is not a valid directory
    */
-  def compileAllFilesAt( inputDirectory: File, outputDirectory: File ) {
+  def compileAllFilesAt(inputDirectory: File, outputDirectory: File) {
     if( inputDirectory.isDirectory() == false )
       throw new DirectoryExpectedException("Input path '"+inputDirectory.getAbsolutePath+"' does not point to a directory")
     if( outputDirectory.isDirectory() == false )
@@ -33,7 +33,7 @@ object Compiler {
       if( file.isDirectory() ) {
         compileAllFilesAt(file, outputDirectory)
       } else {
-        //Assumes the file only has one file extension
+        // Assumes the file only has one file extension
         val periodIndex = file.getName.indexOf(".")
         if(periodIndex != -1 ) {
           val fileExtension = file.getName.substring(periodIndex)
@@ -49,7 +49,7 @@ object Compiler {
    * 			outputDirectory is a valid directory where files can be written.
    * Post: A Scala file has been created using the content of the .crr file.
    */
-  def compileFile( file: File, outputDirectory: File ) {
+  def compileFile(file: File, outputDirectory: File) {
     if( !outputDirectory.isDirectory() )
       throw new DirectoryExpectedException("Output path '"+outputDirectory.getAbsolutePath+"' does not point to a directory")
     
@@ -75,7 +75,7 @@ object Compiler {
    * Throws: UnexpectedTokenException if the token is not a keyword or
    * 				 a bracket.
    */
-  def loadContentInto( scanner: LexicalScanner, container: Container ) {
+  def loadContentInto(scanner: LexicalScanner, container: Container) {
     var depth = 1
     while( scanner.hasNextToken() ) {
       val currentToken = scanner.nextToken()
@@ -180,7 +180,7 @@ object Compiler {
       val currentToken = scanner.nextToken()
       currentToken match {
         case "{" => loadContentInto(scanner, container)
-                    return //Content has been loaded, processing is complete
+                    return // Content has been loaded, processing is complete
                     
         case "using" => configureTypeSafe(scanner, container.addUsing)
           
@@ -199,31 +199,31 @@ object Compiler {
    * Pre: configureFunc should modify a Container or an Orderable by passing single tokens and types.
    * Post: Each token separated by a comma has been passed to configureFunc
    */
-  private def configureTypeSafe(scanner: LexicalScanner, configureFunc: (String, String) => Unit ) {
+  private def configureTypeSafe(scanner: LexicalScanner, configureFunc: (String, String) => Unit) {
     var partsToProcess = 2
 
     var variableType = ""
     
     while( scanner.hasNextToken() ) {
       partsToProcess match {
-        case 2 => //Type expected
+        case 2 => // Type expected
                   variableType = scanner.nextToken()
-                  //Load all content between [ and ]
+                  // Load all content between [ and ]
                   if( scanner.lookAtNextToken() == "[" ) {
                     variableType += loadAllBetweenBrackets(scanner)
                   }
                   partsToProcess -= 1
         
-        case 1 => //Variable name expected
+        case 1 => // Variable name expected
                   configureFunc(scanner.nextToken(), variableType)
                   partsToProcess -= 1
         
-        case 0 => //Comma expected
-                  //Keep processing if there is a comma indicating there are more tokens
+        case 0 => // Comma expected
+                  // Keep processing if there is a comma indicating there are more tokens
                   if( scanner.lookAtNextToken() == "," ) {
                     partsToProcess = 2
                     
-                    //Skip the comma when processing in the next iteration
+                    // Skip the comma when processing in the next iteration
                     scanner.nextToken()
                   } else {
                     return
@@ -237,7 +237,7 @@ object Compiler {
  * 				toConfigure is not null.
    * Post: Each token separated by a comma has been passed to configureFunc
    */
-  private def configureAfter(scanner: LexicalScanner, toConfigure: Orderable ) {
+  private def configureAfter(scanner: LexicalScanner, toConfigure: Orderable) {
     if( toConfigure == null )
       throw new NullArgumentException("toConfigure cannot be null")
     
@@ -245,16 +245,16 @@ object Compiler {
 
     while( scanner.hasNextToken() ) {
       tokensToProcess match {
-        case 1 => //Name expected
+        case 1 => // Name expected
                   toConfigure.addAfter(scanner.nextToken())
                   tokensToProcess -= 1
         
-        case 0 => //Comma expected
-                  //Keep processing if there is a comma indicating there are more tokens
+        case 0 => // Comma expected
+                  // Keep processing if there is a comma indicating there are more tokens
                   if( scanner.lookAtNextToken() == "," ) {
                     tokensToProcess = 1
                     
-                    //Skip the comma when processing in the next iteration
+                    // Skip the comma when processing in the next iteration
                     scanner.nextToken()
                   } else {
                     return
@@ -296,18 +296,18 @@ object Compiler {
    * Throws: UnexpectedTokenException if the next 6 tokens did not follow the expected pattern
    * 				 of "(" "any string" "any string" "->" "any string" ")"
    */
-  private def configureWithPair(scanner: LexicalScanner, configureFunc: (String, String) => Unit ) {
+  private def configureWithPair(scanner: LexicalScanner, configureFunc: (String, String) => Unit) {
     var tokensToProcess = 6
     var pairToPass = ""
     var typeToPass = ""
     
     while( scanner.hasNextToken() ) {
-      //Keep processing if there is a comma indicating there are more tokens
+      // Keep processing if there is a comma indicating there are more tokens
       if( tokensToProcess == 0 ) {
         if( scanner.lookAtNextToken() == "," ) {
           tokensToProcess = 5
           pairToPass = ""
-          scanner.nextToken() //Skip the comma when processing in the next iteration
+          scanner.nextToken() // Skip the comma when processing in the next iteration
         } else {
           return
         }

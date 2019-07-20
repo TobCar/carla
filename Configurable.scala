@@ -3,8 +3,8 @@ package carla
 import collection.mutable.Map
 
 abstract class Configurable(val name: String)  {
-  var using = Map[String, String]() //(variableName, variableType)
-  var passing = Map[String, String]() //(variableName, variableType)
+  var using = Map[String, String]() // (variableName, variableType)
+  var passing = Map[String, String]() // (variableName, variableType)
   
   /**
    * Remembers the name and type of the variable the Configurable needs before running.
@@ -14,13 +14,13 @@ abstract class Configurable(val name: String)  {
    * 
    * Throws IllegalArgumentException if dependentName or dependentType are empty
    */
-  def addUsing( dependentName: String, dependentType: String ) {
+  def addUsing(dependentName: String, dependentType: String) {
     dependentName match {
       case "" => throw new IllegalArgumentException("dependentName cannot be empty")
         
       case null => throw new NullArgumentException("dependentName cannot be null")
       
-      case _ => //Do nothing as the default
+      case _ => // Do nothing as the default
     }
     
     dependentType match {
@@ -28,7 +28,7 @@ abstract class Configurable(val name: String)  {
         
       case null => throw new NullArgumentException("dependentType cannot be null")
       
-      case _ => //Do nothing as the default
+      case _ => // Do nothing as the default
     }
     
     println("Configured 'using' for "+name+" with name: "+dependentName+", and type: "+dependentType)
@@ -43,13 +43,13 @@ abstract class Configurable(val name: String)  {
    * 
    * Throws IllegalArgumentException if dependentName or dependentType are empty
    */
-  def addPassing( dependentName: String, dependentType: String ) {
+  def addPassing(dependentName: String, dependentType: String) {
     dependentName match {
       case "" => throw new IllegalArgumentException("dependentName cannot be empty")
         
       case null => throw new NullArgumentException("dependentName cannot be null")
       
-      case _ => //Do nothing as the default
+      case _ => // Do nothing as the default
     }
     
     dependentType match {
@@ -57,7 +57,7 @@ abstract class Configurable(val name: String)  {
         
       case null => throw new NullArgumentException("dependentType cannot be null")
       
-      case _ => //Do nothing as the default
+      case _ => // Do nothing as the default
     }
     
     println("Configured 'passing' for "+name+" with name: "+dependentName+", and type: "+dependentType)
