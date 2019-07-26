@@ -33,7 +33,7 @@ class Step(name: String) extends Orderable(name) {
   }
   
   /**
-   * Returns: True if this Step will execute its code after all other Step objects.
+   * Returns: True if this carla.Step will execute its code after all other Step objects.
    */
   def isLastStep(): Boolean =
     name == Step.lastKeyword
@@ -43,8 +43,7 @@ object Step {
   private val lastKeyword = "___LAST"
   
   /**
-   * Returns: A newly created Step object that executes its code after all other
-   * 					Step objects.
+   * Returns: A newly created carla.Step object that executes its code after all other Step objects.
    */
   def createLastStep(): Step =
     new Step(lastKeyword)

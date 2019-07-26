@@ -29,7 +29,7 @@ class OrderableRelationshipActor(
   private val isDone = collection.mutable.Map[String, Boolean]()
   private val toFinishQueue = new ConcurrentLinkedQueue[String]()
   
-  //Actor thread
+  // Actor thread
   var orderablesDone = 0
   (new Thread {
     override def run {
@@ -40,7 +40,7 @@ class OrderableRelationshipActor(
           
           if( orderablesDone == isDone.size ) {
             if( parentActor != null ) {
-              //Different processes require different key names
+              // Different processes require different key names
               val mappedOutput = collection.mutable.Map[String, Any]()
               for( (key, value) <- processOutputs ) {
                 mappedOutput.put(processOutputKeys.get(key).get, value)
@@ -87,17 +87,17 @@ class OrderableRelationshipActor(
     val dependentsSet = dependents.getOrElse(orderableName, Set())
     
     if( dependentsSet.isEmpty ) {
-      //This Orderable doesn't lead to any others, pass its output to the process itself
+      // This Orderable doesn't lead to any others, pass its output to the process itself
       val outputs = runnableOutputs.getOrElse(orderableName, collection.mutable.Map[String, Any]())
       putAll(outputs, processOutputs)
     } else {
-      //Attempt to activate the next Orderable
+      // Attempt to activate the next Orderable
       for( dependent <- dependents.getOrElse(orderableName, Set()) ) {
         val inputs = runnables.get(dependent).get.inputs
         val outputs = runnableOutputs.getOrElse(orderableName, collection.mutable.Map[String, Any]())
         
-        //It is possible for multiple Orderables to come before an Orderable is activated.
-        //This is collecting the inputs from all the Orderables before passing them in activate()
+        // It is possible for multiple Orderables to come before an Orderable is activated.
+        // This is collecting the inputs from all the Orderables before passing them in activate()
         putAll(outputs, inputs)
         
         activate(dependent)

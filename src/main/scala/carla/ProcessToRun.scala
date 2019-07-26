@@ -1,7 +1,5 @@
 package carla
 
-import scala.collection.mutable.Queue
-
 class ProcessToRun(name: String, parentActorName: String) extends Orderable(name) {
   var hasGivenToken = false
   
@@ -58,10 +56,10 @@ class ProcessToRun(name: String, parentActorName: String) extends Orderable(name
   }
   
   /**
-   * This feature is not meant to be used in ProcessToRun
+   * This feature is not meant to be used in carla.ProcessToRun
    */
   def insert(token: String) {
-    throw new UnsupportedOperationException("insert is not implemented in ProcessToRun")
+    throw new UnsupportedOperationException("insert is not implemented in carla.ProcessToRun")
   }
   
   /**

@@ -5,31 +5,31 @@ import scala.io.Source
 
 class LexicalScanner {
   // Constant Declarations
-  val Spacing = "[ \11\n]".r
-  val ValidKeyword = "[a-zA-Z_0-9\\.]".r // Also applies to names and variable types
-  val ValidSpecialCharacter = "[\\[\\](),]".r
-  val ValidSpecialToken = "[->]{1,2}".r
-  
+  val SPACING = "[ \t\n]".r
+  val VALID_KEYWORD = "[a-zA-Z_0-9\\.]".r // Also applies to names and variable types
+  val VALID_SPECIAL_CHARACTER = "[\\[\\](),]".r
+  val VALID_SPECIAL_TOKEN = "[->]{1,2}".r
+
   // Variable Declarations
   var currentChar: Char = '\u0000'
   var waitingForBracket = false
-  
+
   var tokens = new ArrayBuffer[String]()
   var currentTokenIndex = 0;
 
   /**
-   * Split up a file into tokens that can be read with nextToken() and hasNextToken() 
+   * Split up a file into tokens that can be read with nextToken() and hasNextToken()
    */
   def readFile(fileName: String): Unit =
     readFile(Source.fromFile(fileName).iter)
-  
+
   /**
-   * Split up a file into tokens that can be read with nextToken() and hasNextToken() 
+   * Split up a file into tokens that can be read with nextToken() and hasNextToken()
    */
   def readFile(lineIterator: Iterator[Char]): Unit = {
     // Make sure currentChar isn't starting as null
     getChar(lineIterator)
-    
+
     // Process the characters
     while( currentChar != '\u0000' ) {
        currentChar match {
@@ -39,21 +39,21 @@ class LexicalScanner {
                        saveToken(readAllContentInBrackets(lineIterator))
                      }
          case '}' => saveCharacter('}', lineIterator)
-         case ValidKeyword(_*) => readKeyword(lineIterator)
-         case ValidSpecialCharacter(_*) => saveCharacter(currentChar, lineIterator)
-         case Spacing(_*) => skipSpacing(lineIterator)
-         case ValidSpecialToken(_*) => readSpecialToken(lineIterator)
-         case '\57' => foundForwardSlash(lineIterator)
+         case VALID_KEYWORD(_*) => readKeyword(lineIterator)
+         case VALID_SPECIAL_CHARACTER(_*) => saveCharacter(currentChar, lineIterator)
+         case SPACING(_*) => skipSpacing(lineIterator)
+         case VALID_SPECIAL_TOKEN(_*) => readSpecialToken(lineIterator)
+         case '/' => foundForwardSlash(lineIterator)
          case _ => throw new UnsupportedOperationException("Could not match character: " + currentChar)
        }
     }
   }
-  
+
   /**
    * Post: A new token has been saved.
    */
   def readKeyword(lineIterator: Iterator[Char]) {
-    val keyword = readToken(ValidKeyword.toString(), lineIterator)
+    val keyword = readToken(VALID_KEYWORD.toString(), lineIterator)
     saveToken(keyword)
     if( keyword == "step" || keyword == "last" ) {
       waitingForBracket = true
@@ -61,12 +61,12 @@ class LexicalScanner {
       saveUntil('\n', lineIterator)
     }
   }
-  
+
   /**
    * Post: A token has been saved containing every character until toStop was encountered
    * 			 or there was nothing left to read.
    */
-  def saveUntil(toStop: Character, lineIterator: Iterator[Char]) { 
+  def saveUntil(toStop: Character, lineIterator: Iterator[Char]) {
     var currentToken = ""
     do {
       currentToken += currentChar
@@ -74,15 +74,15 @@ class LexicalScanner {
     } while( currentChar != toStop && currentChar != '\u0000' )
     saveToken(currentToken)
   }
-  
+
   /**
    * Post: A new token has been saved.
    */
   def readSpecialToken(lineIterator: Iterator[Char]) {
-    val specialToken = readToken(ValidSpecialToken.toString(), lineIterator)
+    val specialToken = readToken(VALID_SPECIAL_TOKEN.toString(), lineIterator)
     saveToken(specialToken)
   }
-  
+
   /**
    * Post: char has been saved to the scanner's list of tokens
    */
@@ -90,7 +90,7 @@ class LexicalScanner {
     saveToken(char.toString())
     getChar(lineIterator)
   }
-  
+
   /**
    * Pre: The last character read and saved was '{'
    * Post: All characters are loaded until there is a '}' for every '{'
@@ -103,13 +103,13 @@ class LexicalScanner {
     } else {
       var depth = 1
       var allContent = ""
-      while( depth > 0 ) {        
+      while( depth > 0 ) {
         if( currentChar == '{' ) {
           depth += 1
         } else if( currentChar == '}' ) {
           depth -= 1
         }
-  
+
         if( depth > 0 ) {
           allContent += currentChar
           getChar(lineIterator)
@@ -118,7 +118,7 @@ class LexicalScanner {
       allContent
     }
   }
-  
+
   /**
    * Pre: lineIterator is not null
    * Returning: A string that matches regexString
@@ -131,33 +131,33 @@ class LexicalScanner {
     } while( currentChar.toString().matches(regexString) )
     currentToken
   }
-  
+
   /**
    * Pre: currentChar == '/' and lineIterator is not null
    * Post: The contents of the comment are skipped.
    */
   def foundForwardSlash(lineIterator: Iterator[Char]) {
-    if( currentChar != '\57' ) {
+    if( currentChar != '/' ) {
       println("ERROR: currentChar != '/'")
     } else {
-      val prevChar = '\57'
+      val prevChar = '/'
       getChar(lineIterator)
       currentChar match {
-        case '=' => saveToken("\57\75")
+        case '=' => saveToken("/=")
         case '*' => skipTo('*', '/', lineIterator)
         case '/' => skipTo('\n', lineIterator)
         case _ => println("Could not match character after forward slash: " + currentChar)
       }
     }
   }
-  
+
   /**
    * Pre: String is not empty
    * Post: token has been stored to be sent to the compiler later
    */
   def saveToken(token: String) =
     tokens += token
-  
+
   /**
    * Pre: currentChar == '*' and lineIterator is not null
    * Post: currentChar is the character after end1 and end2 appear one after
@@ -172,7 +172,7 @@ class LexicalScanner {
     } while( prevChar != end1 && currentChar != end2 )
     getChar(lineIterator)
   }
-  
+
   /**
    * Pre: lineIterator is not null
    * Post: currentChar is the character after end appears through getChar()
@@ -183,14 +183,14 @@ class LexicalScanner {
     }
     getChar(lineIterator)
   }
-  
+
   /**
    * Pre: spacingRegexString is not empty or null and lineIterator is not null
    * Post: spacingRegexString does not match currentChar.
    * 			 currentChar will equal null (\u0000) if there is nothing left to read
    */
   def skipSpacing(lineIterator: Iterator[Char]) {
-    val spacingRegexString = Spacing.toString()
+    val spacingRegexString = SPACING.toString()
     while( currentChar.toString().matches(spacingRegexString) ) {
       getChar(lineIterator)
     }

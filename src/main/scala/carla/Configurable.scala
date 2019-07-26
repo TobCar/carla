@@ -1,6 +1,6 @@
 package carla
 
-import collection.mutable.Map
+import scala.collection.mutable.Map
 
 abstract class Configurable(val name: String)  {
   var using = Map[String, String]() // (variableName, variableType)

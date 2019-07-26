@@ -1,26 +1,27 @@
 package carla
 
-import java.io.{File, FileWriter, BufferedWriter}
+import java.awt.EventQueue
+import java.io.File
+
 import carla.including.OrderableRelationshipActor.createActorName
 import javax.swing.JFileChooser
-import java.awt.EventQueue
 
 /**
  * Takes .crr files and generates .scala files that can be run in the JVM.
  */
 object Compiler {
-  
+
   def main(args: Array[String]) {
     val selectedInputDirectory = userSelectDirectory("Select directory to compile from")
     val selectedOutputDirectory = userSelectDirectory("Select directory where Scala files will be written")
     compileAllFilesAt(selectedInputDirectory, selectedOutputDirectory)
   }
-  
+
   /**
    * Pre: inputDirectory and outputDirectory are a valid directories
    * Post: All .crr files have been compiled in that directory
    * 			 or any subdirectories it may have
-   * 
+   *
    * Throws: DirectoryExpectedException if directory is not a valid directory
    */
   def compileAllFilesAt(inputDirectory: File, outputDirectory: File) {
@@ -28,7 +29,7 @@ object Compiler {
       throw new DirectoryExpectedException("Input path '"+inputDirectory.getAbsolutePath+"' does not point to a directory")
     if( outputDirectory.isDirectory() == false )
       throw new DirectoryExpectedException("Output path '"+outputDirectory.getAbsolutePath+"' does not point to a directory")
-    
+
     for( file <- inputDirectory.listFiles() ) {
       if( file.isDirectory() ) {
         compileAllFilesAt(file, outputDirectory)
@@ -43,7 +44,7 @@ object Compiler {
       }
     }
   }
-  
+
   /**
    * Pre: file is a real file with the .crr extension
    * 			outputDirectory is a valid directory where files can be written.
@@ -52,14 +53,14 @@ object Compiler {
   def compileFile(file: File, outputDirectory: File) {
     if( !outputDirectory.isDirectory() )
       throw new DirectoryExpectedException("Output path '"+outputDirectory.getAbsolutePath+"' does not point to a directory")
-    
+
     val periodIndex = file.getName.indexOf(".")
     if(periodIndex != -1 ) {
       val fileExtension = file.getName.substring(periodIndex)
       if( fileExtension != ".crr" ) {
         throw new IllegalFileExtensionException("Expected '.crr' file, received '"+fileExtension+"'")
       }
-      
+
       val scanner = new LexicalScanner()
       scanner.readFile(scala.io.Source.fromFile(file).iter)
       val superContainer = Container.createSuperContainer()
@@ -67,11 +68,11 @@ object Compiler {
       ScalaWriter.createScalaFilesFrom(superContainer, outputDirectory)
     }
   }
-  
+
   /**
    * Pre: There was just an open bracket "{" and there is a closing
    * 			bracket "}" to match it OR it is the start of the file.
-   * 
+   *
    * Throws: UnexpectedTokenException if the token is not a keyword or
    * 				 a bracket.
    */
@@ -81,7 +82,7 @@ object Compiler {
       val currentToken = scanner.nextToken()
       currentToken match {
         case "import" => container.importTokens += scanner.nextToken()
-        
+
         case "process" => val internalContainer = new Container(scanner.nextToken())
                           processContainer(scanner, internalContainer)
                           container.insert(internalContainer)
@@ -101,7 +102,7 @@ object Compiler {
       }
     }
   }
-  
+
   /**
    * Pre: The second last token read was "step".
    * 			step is not null.
@@ -113,29 +114,29 @@ object Compiler {
     if( step == null ) {
       throw new NullArgumentException("step cannot be null")
     }
-    
+
     var depth = 0
-    
+
     while( scanner.hasNextToken() ) {
       val currentToken = scanner.nextToken()
       currentToken match {
         case "after" => configureAfter(scanner, step)
-        
+
         case "using" => configureTypeSafe(scanner, step.addUsing)
-        
+
         case "passing" => configureTypeSafe(scanner, step.addPassing)
-        
+
         case "{" => depth += 1
-          
+
         case "}" => depth -= 1
                     if( depth <= 0 )
                       return
-        
+
         case _ => step.insert(currentToken)
       }
     }
   }
-  
+
   /**
    * Pre: The second last token read was "run".
    * 			processToRun is not null.
@@ -148,24 +149,24 @@ object Compiler {
     if( processToRun == null ) {
       throw new NullArgumentException("processToRun cannot be null")
     }
-    
+
     while( scanner.hasNextToken() ) {
       val currentToken = scanner.lookAtNextToken()
       currentToken match {
         case "after" => scanner.nextToken()
                         configureAfter(scanner, processToRun)
-        
+
         case "using" => scanner.nextToken()
                         configureWithPair(scanner, processToRun.addUsing)
-        
+
         case "passing" => scanner.nextToken()
                           configureWithPair(scanner, processToRun.addPassing)
-        
+
         case _ => return
       }
     }
   }
-  
+
   /**
    * Pre: container is not null
    * Post: A new Container object was created with the
@@ -175,27 +176,27 @@ object Compiler {
     if( container == null ) {
       throw new NullArgumentException("container cannot be null")
     }
-    
+
     while( scanner.hasNextToken() ) {
       val currentToken = scanner.nextToken()
       currentToken match {
         case "{" => loadContentInto(scanner, container)
                     return // Content has been loaded, processing is complete
-                    
+
         case "using" => configureTypeSafe(scanner, container.addUsing)
-          
+
         case "passing" => configureTypeSafe(scanner, container.addPassing)
-          
+
         case _ => println("processContainerToken is not fully implemented. Skipping info: "+currentToken)
       }
     }
   }
-  
+
   /**
    * Modify a Configurable object for the keywords "using" and "passing".
-   * 
+   *
    * Syntax expected: [Type] [Variable Name] [Comma if there are more to process]
-   * 
+   *
    * Pre: configureFunc should modify a Container or an Orderable by passing single tokens and types.
    * Post: Each token separated by a comma has been passed to configureFunc
    */
@@ -203,7 +204,7 @@ object Compiler {
     var partsToProcess = 2
 
     var variableType = ""
-    
+
     while( scanner.hasNextToken() ) {
       partsToProcess match {
         case 2 => // Type expected
@@ -213,16 +214,16 @@ object Compiler {
                     variableType += loadAllBetweenBrackets(scanner)
                   }
                   partsToProcess -= 1
-        
+
         case 1 => // Variable name expected
                   configureFunc(scanner.nextToken(), variableType)
                   partsToProcess -= 1
-        
+
         case 0 => // Comma expected
                   // Keep processing if there is a comma indicating there are more tokens
                   if( scanner.lookAtNextToken() == "," ) {
                     partsToProcess = 2
-                    
+
                     // Skip the comma when processing in the next iteration
                     scanner.nextToken()
                   } else {
@@ -231,7 +232,7 @@ object Compiler {
       }
     }
   }
-  
+
   /**
    * Pre: There are single tokens by commas.
  * 				toConfigure is not null.
@@ -240,7 +241,7 @@ object Compiler {
   private def configureAfter(scanner: LexicalScanner, toConfigure: Orderable) {
     if( toConfigure == null )
       throw new NullArgumentException("toConfigure cannot be null")
-    
+
     var tokensToProcess = 1
 
     while( scanner.hasNextToken() ) {
@@ -248,12 +249,12 @@ object Compiler {
         case 1 => // Name expected
                   toConfigure.addAfter(scanner.nextToken())
                   tokensToProcess -= 1
-        
+
         case 0 => // Comma expected
                   // Keep processing if there is a comma indicating there are more tokens
                   if( scanner.lookAtNextToken() == "," ) {
                     tokensToProcess = 1
-                    
+
                     // Skip the comma when processing in the next iteration
                     scanner.nextToken()
                   } else {
@@ -262,11 +263,11 @@ object Compiler {
       }
     }
   }
-  
+
   /**
    * Pre: scanner.lookAtNextToken() == "["
    * Returns: The brackets and everything between them.
-   * 
+   *
    * Throws: NullArgumentException if scanner is null.
    * 				 UnexpectedTokenException if scanner.lookAtNextToken() != "["
    */
@@ -275,24 +276,24 @@ object Compiler {
       throw new NullArgumentException("scanner cannot be null")
     if( scanner.lookAtNextToken() != "[" )
       throw new UnexpectedTokenException("Expected '[' received '"+scanner.lookAtNextToken()+"'")
-    
+
     var content = scanner.nextToken()
     var depth = 1
     while( scanner.hasNextToken() && depth > 0 ) {
       if( scanner.lookAtNextToken() == "[" ) {
         depth += 1
-      } else if( scanner.lookAtNextToken() == "]" ) { 
+      } else if( scanner.lookAtNextToken() == "]" ) {
         depth -= 1
       }
       content += scanner.nextToken()
     }
     content
   }
-  
+
   /**
    * Pre: configureFunc should modify a Container or an Orderable by passing single tokens.
    * Post: Tokens representing each pair separated by commas have been passed to configureFunc
-   * 
+   *
    * Throws: UnexpectedTokenException if the next 6 tokens did not follow the expected pattern
    * 				 of "(" "any string" "any string" "->" "any string" ")"
    */
@@ -300,7 +301,7 @@ object Compiler {
     var tokensToProcess = 6
     var pairToPass = ""
     var typeToPass = ""
-    
+
     while( scanner.hasNextToken() ) {
       // Keep processing if there is a comma indicating there are more tokens
       if( tokensToProcess == 0 ) {
@@ -318,19 +319,19 @@ object Compiler {
           case "(" => if( tokensToProcess != 5 ) {
                         throw new UnexpectedTokenException("Unexpected token '('")
                       }
-                      
+
           case "->" =>  if( tokensToProcess != 2 ) {
                           throw new UnexpectedTokenException("Unexpected token '->'")
                         } else {
                           pairToPass += " "
                         }
-          
+
           case ")" => if( tokensToProcess != 0 ) {
                         throw new UnexpectedTokenException("Unexpected token ')'")
                       } else {
                         configureFunc(pairToPass, typeToPass)
                       }
-          
+
           case _ => if( tokensToProcess == 4 ) {
                       typeToPass = currentToken
                       if( scanner.lookAtNextToken() == "[" ) {
@@ -343,10 +344,10 @@ object Compiler {
       }
     }
   }
-  
+
   /**
    * Let the user pick a directory or exit the program if the user does not pick one.
-   * 
+   *
    * Returns: A File object with a path to a directory.
    */
   def userSelectDirectory(title: String): File = {

@@ -1,0 +1,12 @@
+package carla.including
+abstract class OrderableRunnable(name: String, relationshipActor: OrderableRelationshipActor) extends Runnable {
+  val inputs = collection.mutable.Map[String, Any]()
+  def run() {
+    done(customRun())
+  }
+  def customRun(): scala.collection.immutable.Map[String, Any]
+  private def done(outputs: collection.immutable.Map[String, Any]) {
+    if( relationshipActor != null )
+      relationshipActor.addToFinishQueue(name, outputs)
+  }
+}
