@@ -10,22 +10,16 @@ Carla simply removes classes, functions, and other OOP features to boil the code
 All Carla files use the file extension "crr". 
 Take a look at carla-example.crr to get a feel of what Carla is like then read the [wiki](https://github.com/TobCar/carla/wiki) to learn the syntax.
 
-### Prerequisites
+### Compiling Carla Files
 
-sbt support has not been added to Carla yet.
-You will need an IDE that can run Scala on its own such as Scala's version of [Eclipse](http://scala-ide.org).
-
-### Running Carla Files
-
-There is no installation process.
-Simply sync this repository with your computer or download all the files.
-Run Compiler.scala and it will ask you to select the directory containing the Carla (".crr") files.
+Clone this repository to your computer or download all the files.
+Run Compiler.scala, it will ask you to select the directory containing the Carla (".crr") files.
 Then, select the directory where generated Scala files should go.
 The name of the directory where files are generated to is also the package name of the generated files.
 
-### Deployment
+### Running Compiled Carla Code
 
-Once a Carla file has been run you can take the Scala files it generates and modify them or distribute them as you would with any other Scala file.
+Once a Carla file has been compiled into Scala code you can take the generated files and modify them or distribute them as you would with any other Scala file.
 
 ## Contributing
 
